@@ -1,15 +1,16 @@
 import moment from '../lib/moment.js';
+import { makeFlexDiet } from '../line/flexDiet.js';
 
 /** Projects a weight-change trajectory from fWeight/fDate to tWeight/tDate,
  * stepping daily (<=30 days), weekly (<=210 days) or monthly (>210 days).
- * Ported from diet.gs's diet(). */
+ * Ported from diet.gs's diet(), now rendered as a Flex Message. */
 export function diet(tWeight, tDate, fWeight, fDate) {
   const mid = tDate.diff(fDate, 'd');
   const dfp = (tWeight - fWeight) / fWeight;
   const mdfp = -(1 - Math.pow(1 + dfp, 30 / mid));
 
-  let msg = `総率 ${(dfp * 100).toFixed(2)}% 月率 ${(mdfp * 100).toFixed(2)}%/30日\n`;
-  msg += `${fDate.format('MM/DD(ddd)')} ${fWeight.toFixed(2)}`;
+  const flexDiet = makeFlexDiet(dfp * 100, mdfp * 100);
+  flexDiet.addRow(fDate.format('MM/DD(ddd)'), fWeight, { emphasis: true });
 
   let nDate;
   let step;
@@ -39,10 +40,10 @@ export function diet(tWeight, tDate, fWeight, fDate) {
     nDate = step(nDate);
     i = nDate.diff(fDate, 'd');
     const adfp = Math.pow(1 + dfp, i / mid);
-    msg += `\n${nDate.format('MM/DD(ddd)')} ${(fWeight * adfp).toFixed(2)}`;
+    flexDiet.addRow(nDate.format('MM/DD(ddd)'), fWeight * adfp, { emphasis: i >= mid });
   } while (i < mid);
 
-  return msg;
+  return flexDiet.messages();
 }
 
 export function doDiet(key) {
