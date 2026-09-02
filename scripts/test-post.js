@@ -1,0 +1,25 @@
+// Local smoke test, equivalent to test.gs's test_post(): feeds a sample
+// LINE text-message event straight into the handler, bypassing HTTP and
+// signature validation. Requires a real .env (Google credentials, sheet
+// ids, etc) since it exercises the same Sheets/Drive/Calendar calls.
+import { selecter } from '../src/handlers/selecter.js';
+
+const message = process.argv[2] || '@BOT sch view';
+
+const event = {
+  type: 'message',
+  message: { type: 'text', id: '459675017950265717', text: message },
+  webhookEventId: '01H2Z3XJPC70ABFZ9DCQH42C96',
+  deliveryContext: { isRedelivery: false },
+  timestamp: Date.now(),
+  source: { type: 'user', userId: 'U8da0781e19ee72360f267213c47d2f57' },
+  replyToken: '8c34269424c64e41b8c65fb5f364e98e',
+  mode: 'active',
+};
+
+selecter(event)
+  .then(() => console.log('done'))
+  .catch((err) => {
+    console.error(err);
+    process.exit(1);
+  });
