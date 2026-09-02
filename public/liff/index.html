@@ -1,0 +1,142 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>linebot メニュー</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 20px 40px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", sans-serif;
+    background: #f7f7f9; color: #1f2937;
+  }
+  h1 { font-size: 20px; margin: 0 0 20px; }
+  .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  label { display: block; font-size: 13px; color: #6b7280; margin: 16px 0 6px; }
+  label:first-of-type { margin-top: 0; }
+  input, select {
+    width: 100%; font-size: 17px; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px;
+    background: #fff; color: #111827;
+  }
+  input:focus, select:focus { outline: none; border-color: #6366f1; }
+  .row { display: flex; gap: 12px; }
+  .row > div { flex: 1; }
+  button.submit {
+    width: 100%; margin-top: 24px; padding: 15px; font-size: 16px; font-weight: 700;
+    border: none; border-radius: 12px; color: #fff; cursor: pointer;
+  }
+  #dice button.submit { background: #5b21b6; }
+  #diet button.submit { background: #0f766e; }
+  .menu a {
+    display: block; text-align: center; padding: 18px; margin-bottom: 12px; border-radius: 12px;
+    color: #fff; text-decoration: none; font-weight: 700; font-size: 16px;
+  }
+  #status { margin-top: 16px; font-size: 14px; color: #b91c1c; min-height: 20px; }
+  [hidden] { display: none !important; }
+  .hint { font-size: 12px; color: #9ca3af; margin-top: 4px; }
+</style>
+</head>
+<body>
+  <div id="menu" class="menu" hidden>
+    <h1>linebot メニュー</h1>
+    <a href="?view=dice" style="background:#5b21b6;">🎲 サイコロ</a>
+    <a href="?view=diet" style="background:#0f766e;">⚖️ ダイエット試算</a>
+  </div>
+
+  <form id="dice" class="card" hidden>
+    <h1>🎲 サイコロ</h1>
+    <div class="row">
+      <div>
+        <label for="d-count">個数</label>
+        <input id="d-count" type="number" inputmode="numeric" min="1" max="100" value="2" required>
+      </div>
+      <div>
+        <label for="d-sides">面数</label>
+        <input id="d-sides" type="number" inputmode="numeric" min="2" max="999" value="6" required>
+      </div>
+    </div>
+    <button type="submit" class="submit">振る</button>
+  </form>
+
+  <form id="diet" class="card" hidden>
+    <h1>⚖️ ダイエット試算</h1>
+    <label for="t-weight">目標体重 (kg)</label>
+    <input id="t-weight" type="number" inputmode="decimal" step="0.1" min="0" required>
+
+    <label for="t-date">目標日</label>
+    <input id="t-date" type="date" required>
+
+    <label for="f-weight">現在の体重 (kg)</label>
+    <input id="f-weight" type="number" inputmode="decimal" step="0.1" min="0" required>
+
+    <label for="f-date">開始日（省略可・未指定なら今日）</label>
+    <input id="f-date" type="date">
+    <div class="hint">30日以内なら日次、210日以内なら週次、それ以上なら月次で変動を試算します。</div>
+
+    <button type="submit" class="submit">試算する</button>
+  </form>
+
+  <div id="status"></div>
+
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="/liff/config.js"></script>
+<script>
+(async () => {
+  const statusEl = document.getElementById('status');
+  const params = new URLSearchParams(location.search);
+  const view = params.get('view');
+
+  function show(id) {
+    for (const el of document.querySelectorAll('#menu, #dice, #diet')) el.hidden = el.id !== id;
+  }
+  show(view === 'dice' || view === 'diet' ? view : 'menu');
+
+  function pad(n) { return String(n); }
+  function mdFromInput(value) {
+    // <input type="date"> gives "YYYY-MM-DD"; the bot command wants "M/D".
+    const [, m, d] = value.split('-');
+    return `${pad(Number(m))}/${pad(Number(d))}`;
+  }
+
+  async function send(text) {
+    try {
+      if (!liff.isInClient()) {
+        statusEl.textContent = 'LINEアプリ内で開いてください。';
+        return;
+      }
+      await liff.sendMessages([{ type: 'text', text }]);
+      liff.closeWindow();
+    } catch (err) {
+      statusEl.textContent = `送信に失敗しました: ${err.message ?? err}`;
+    }
+  }
+
+  document.getElementById('dice').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const count = document.getElementById('d-count').value;
+    const sides = document.getElementById('d-sides').value;
+    send(`@BOT ${count}D${sides}`);
+  });
+
+  document.getElementById('diet').addEventListener('submit', (e) => {
+    e.preventDefault();
+    const tWeight = document.getElementById('t-weight').value;
+    const tDate = mdFromInput(document.getElementById('t-date').value);
+    const fWeight = document.getElementById('f-weight').value;
+    const fDateRaw = document.getElementById('f-date').value;
+    let text = `@BOT diet ${tWeight} ${tDate} ${fWeight}`;
+    if (fDateRaw) text += ` ${mdFromInput(fDateRaw)}`;
+    send(text);
+  });
+
+  try {
+    const liffId = params.get('liffId') || window.LIFF_ID;
+    await liff.init({ liffId });
+  } catch (err) {
+    statusEl.textContent = `LIFF初期化に失敗しました: ${err.message ?? err}`;
+  }
+})();
+</script>
+</body>
+</html>

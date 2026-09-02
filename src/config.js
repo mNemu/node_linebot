@@ -41,4 +41,8 @@ export const config = {
   },
 
   dailyScheduleTarget: process.env.DAILY_SCHEDULE_TARGET,
+
+  // LIFF app id backing public/liff/index.html (the dice/diet input forms
+  // opened from the rich menu). Managed via scripts/liff.js.
+  liffId: process.env.LIFF_ID,
 };

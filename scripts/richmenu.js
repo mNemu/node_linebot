@@ -19,23 +19,31 @@ async function api(method, path, { headers, body } = {}) {
   return text ? JSON.parse(text) : undefined;
 }
 
-// Matches assets/richmenu.png: a 2500x1686, 3x2 grid of buttons. Each button
-// sends a fixed "@BOT ..." command, identical to typing it - commands that
-// need arguments (diet/cfg) just prompt their usage text.
-const LAYOUT = {
-  size: { width: 2500, height: 1686 },
-  selected: true,
-  name: 'main-menu',
-  chatBarText: 'メニュー',
-  areas: [
-    { bounds: { x: 0, y: 0, width: 833, height: 843 }, action: { type: 'message', text: '@BOT 2D6' } },
-    { bounds: { x: 833, y: 0, width: 833, height: 843 }, action: { type: 'message', text: '@BOT sch view' } },
-    { bounds: { x: 1666, y: 0, width: 834, height: 843 }, action: { type: 'message', text: '@BOT alb list' } },
-    { bounds: { x: 0, y: 843, width: 833, height: 843 }, action: { type: 'message', text: '@BOT diet' } },
-    { bounds: { x: 833, y: 843, width: 833, height: 843 }, action: { type: 'message', text: '@BOT cfg list' } },
-    { bounds: { x: 1666, y: 843, width: 834, height: 843 }, action: { type: 'message', text: '@BOT' } },
-  ],
-};
+// Matches assets/richmenu.png: a 2500x1686, 3x2 grid of buttons. Most buttons
+// send a fixed "@BOT ..." command, identical to typing it. サイコロ/ダイエット
+// instead open the LIFF input forms (public/liff/index.html) so values/dates
+// can be entered through a real form instead of typed free text.
+function layout() {
+  if (!config.liffId) {
+    throw new Error('LIFF_ID is not set - run `node scripts/liff.js create <url>` first, then set it in .env.');
+  }
+  const liffUrl = (view) => `https://liff.line.me/${config.liffId}?view=${view}`;
+
+  return {
+    size: { width: 2500, height: 1686 },
+    selected: true,
+    name: 'main-menu',
+    chatBarText: 'メニュー',
+    areas: [
+      { bounds: { x: 0, y: 0, width: 833, height: 843 }, action: { type: 'uri', uri: liffUrl('dice') } },
+      { bounds: { x: 833, y: 0, width: 833, height: 843 }, action: { type: 'message', text: '@BOT sch view' } },
+      { bounds: { x: 1666, y: 0, width: 834, height: 843 }, action: { type: 'message', text: '@BOT alb list' } },
+      { bounds: { x: 0, y: 843, width: 833, height: 843 }, action: { type: 'uri', uri: liffUrl('diet') } },
+      { bounds: { x: 833, y: 843, width: 833, height: 843 }, action: { type: 'message', text: '@BOT cfg list' } },
+      { bounds: { x: 1666, y: 843, width: 834, height: 843 }, action: { type: 'message', text: '@BOT' } },
+    ],
+  };
+}
 
 function usage() {
   console.error(
@@ -58,7 +66,7 @@ if (cmd === 'list') {
   const image = fs.readFileSync(arg);
   const { richMenuId } = await api('POST', '', {
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(LAYOUT),
+    body: JSON.stringify(layout()),
   });
   console.log(`created ${richMenuId}, uploading image...`);
   await fetch(`${API_DATA}/${richMenuId}/content`, {

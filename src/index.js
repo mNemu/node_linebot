@@ -1,9 +1,13 @@
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import express from 'express';
 import { middleware as lineMiddleware } from '@line/bot-sdk';
 import { config } from './config.js';
 import { selecter } from './handlers/selecter.js';
 import { initScheduler } from './lib/scheduler.js';
 import { startDailyScheduleCron } from './cron/dailySchedule.js';
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 initScheduler();
 startDailyScheduleCron();
@@ -13,6 +17,12 @@ const app = express();
 app.get('/', (req, res) => {
   res.send('Hello, World!');
 });
+
+// Injects the registered LIFF app id into public/liff/index.html (see scripts/liff.js).
+app.get('/liff/config.js', (req, res) => {
+  res.type('application/javascript').send(`window.LIFF_ID = ${JSON.stringify(config.liffId ?? '')};`);
+});
+app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.post(
   '/webhook',
