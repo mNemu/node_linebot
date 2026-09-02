@@ -1,0 +1,84 @@
+// Manages the LINE Rich Menu (the tappable button grid shown above the chat
+// keyboard). Each button just sends a preset "@BOT ..." text message, so it
+// reuses all the existing command handling in src/handlers/ - no webhook
+// changes needed. Run with a real CHANNEL_ACCESS_TOKEN in .env.
+import fs from 'node:fs';
+import { config } from '../src/config.js';
+
+const API = 'https://api.line.me/v2/bot/richmenu';
+const API_DATA = 'https://api-data.line.me/v2/bot/richmenu';
+
+function authHeaders(extra = {}) {
+  return { Authorization: `Bearer ${config.line.channelAccessToken}`, ...extra };
+}
+
+async function api(method, path, { headers, body } = {}) {
+  const res = await fetch(`${API}${path}`, { method, headers: authHeaders(headers), body });
+  const text = await res.text();
+  if (!res.ok) throw new Error(`${method} ${path} -> ${res.status} ${text}`);
+  return text ? JSON.parse(text) : undefined;
+}
+
+// Matches assets/richmenu.png: a 2500x1686, 3x2 grid of buttons. Each button
+// sends a fixed "@BOT ..." command, identical to typing it - commands that
+// need arguments (diet/cfg) just prompt their usage text.
+const LAYOUT = {
+  size: { width: 2500, height: 1686 },
+  selected: true,
+  name: 'main-menu',
+  chatBarText: 'メニュー',
+  areas: [
+    { bounds: { x: 0, y: 0, width: 833, height: 843 }, action: { type: 'message', text: '@BOT 2D6' } },
+    { bounds: { x: 833, y: 0, width: 833, height: 843 }, action: { type: 'message', text: '@BOT sch view' } },
+    { bounds: { x: 1666, y: 0, width: 834, height: 843 }, action: { type: 'message', text: '@BOT alb list' } },
+    { bounds: { x: 0, y: 843, width: 833, height: 843 }, action: { type: 'message', text: '@BOT diet' } },
+    { bounds: { x: 833, y: 843, width: 833, height: 843 }, action: { type: 'message', text: '@BOT cfg list' } },
+    { bounds: { x: 1666, y: 843, width: 834, height: 843 }, action: { type: 'message', text: '@BOT' } },
+  ],
+};
+
+function usage() {
+  console.error(
+    'Usage:\n' +
+      '  node scripts/richmenu.js list                         - list existing rich menus\n' +
+      '  node scripts/richmenu.js create-and-set <image.png>    - create LAYOUT, upload image, set as default for all users\n' +
+      '  node scripts/richmenu.js delete <richMenuId>            - delete a rich menu\n'
+  );
+  process.exit(1);
+}
+
+const [, , cmd, arg] = process.argv;
+
+if (cmd === 'list') {
+  const { richmenus } = await api('GET', '/list');
+  if (richmenus.length === 0) console.log('(no rich menus)');
+  for (const m of richmenus) console.log(`${m.richMenuId}\t${m.name}\t${m.size.width}x${m.size.height}`);
+} else if (cmd === 'create-and-set') {
+  if (!arg) usage();
+  const image = fs.readFileSync(arg);
+  const { richMenuId } = await api('POST', '', {
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(LAYOUT),
+  });
+  console.log(`created ${richMenuId}, uploading image...`);
+  await fetch(`${API_DATA}/${richMenuId}/content`, {
+    method: 'POST',
+    headers: authHeaders({ 'Content-Type': 'image/png' }),
+    body: image,
+  }).then(async (res) => {
+    if (!res.ok) throw new Error(`upload image -> ${res.status} ${await res.text()}`);
+  });
+  await fetch(`https://api.line.me/v2/bot/user/all/richmenu/${richMenuId}`, {
+    method: 'POST',
+    headers: authHeaders(),
+  }).then(async (res) => {
+    if (!res.ok) throw new Error(`set default -> ${res.status} ${await res.text()}`);
+  });
+  console.log(`${richMenuId} is now the default rich menu for all users.`);
+} else if (cmd === 'delete') {
+  if (!arg) usage();
+  await api('DELETE', `/${arg}`);
+  console.log(`deleted ${arg}`);
+} else {
+  usage();
+}

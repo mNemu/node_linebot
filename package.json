@@ -9,7 +9,8 @@
     "dev": "node --watch src/index.js",
     "test:webhook": "node scripts/test-post.js",
     "cfg": "node scripts/cfg.js",
-    "pending": "node scripts/pending.js"
+    "pending": "node scripts/pending.js",
+    "richmenu": "node scripts/richmenu.js"
   },
   "dependencies": {
     "@googlemaps/google-maps-services-js": "^3.4.0",
