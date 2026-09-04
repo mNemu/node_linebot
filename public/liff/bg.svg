@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 2400">
+  <defs>
+    <radialGradient id="blob-a" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#5b21b6" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#5b21b6" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="blob-b" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#0f766e" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#0f766e" stop-opacity="0"/>
+    </radialGradient>
+    <pattern id="dots" width="56" height="56" patternUnits="userSpaceOnUse">
+      <circle cx="4" cy="4" r="4" fill="#111827" fill-opacity="0.05"/>
+    </pattern>
+  </defs>
+
+  <rect x="0" y="0" width="1200" height="2400" fill="#f7f7f9"/>
+  <rect x="0" y="0" width="1200" height="2400" fill="url(#dots)"/>
+
+  <circle cx="120" cy="180" r="480" fill="url(#blob-a)"/>
+  <circle cx="1120" cy="620" r="360" fill="url(#blob-b)"/>
+  <circle cx="1080" cy="2260" r="520" fill="url(#blob-a)"/>
+  <circle cx="80" cy="1780" r="380" fill="url(#blob-b)"/>
+</svg>

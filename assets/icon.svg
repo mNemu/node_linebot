@@ -1,0 +1,50 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1000 1000">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5b21b6"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+    <filter id="soft-shadow" x="-30%" y="-30%" width="160%" height="160%">
+      <feDropShadow dx="0" dy="14" stdDeviation="18" flood-color="#000000" flood-opacity="0.22"/>
+    </filter>
+  </defs>
+
+  <rect x="0" y="0" width="1000" height="1000" rx="220" fill="url(#bg)"/>
+
+  <!-- antenna -->
+  <line x1="500" y1="150" x2="500" y2="215" stroke="#ffffff" stroke-width="18" stroke-linecap="round"/>
+  <circle cx="500" cy="120" r="34" fill="#fbbf24"/>
+
+  <!-- head -->
+  <g filter="url(#soft-shadow)">
+    <rect x="230" y="230" width="540" height="470" rx="120" fill="#ffffff"/>
+  </g>
+
+  <!-- ears / side modules hint at multi-function -->
+  <circle cx="222" cy="430" r="46" fill="#fbbf24"/>
+  <circle cx="778" cy="430" r="46" fill="#f472b6"/>
+
+  <!-- face plate -->
+  <rect x="300" y="330" width="400" height="230" rx="70" fill="#0f172a"/>
+
+  <!-- eyes -->
+  <circle cx="410" cy="445" r="34" fill="#5eead4"/>
+  <circle cx="590" cy="445" r="34" fill="#5eead4"/>
+  <circle cx="421" cy="433" r="10" fill="#ffffff"/>
+  <circle cx="601" cy="433" r="10" fill="#ffffff"/>
+
+  <!-- smile -->
+  <path d="M420 505 Q500 555 580 505" stroke="#5eead4" stroke-width="16" stroke-linecap="round" fill="none"/>
+
+  <!-- cheeks -->
+  <circle cx="330" cy="500" r="22" fill="#f472b6" opacity="0.55"/>
+  <circle cx="670" cy="500" r="22" fill="#f472b6" opacity="0.55"/>
+
+  <!-- chin / collar -->
+  <rect x="370" y="610" width="260" height="46" rx="23" fill="#e2e8f0"/>
+
+  <!-- multi-function badge dots -->
+  <circle cx="440" cy="633" r="14" fill="#5b21b6"/>
+  <circle cx="500" cy="633" r="14" fill="#0f766e"/>
+  <circle cx="560" cy="633" r="14" fill="#fbbf24"/>
+</svg>

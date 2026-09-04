@@ -1,0 +1,83 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 960">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#5b21b6"/>
+      <stop offset="1" stop-color="#0f766e"/>
+    </linearGradient>
+    <radialGradient id="glow" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.16"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0"/>
+    </radialGradient>
+    <radialGradient id="glow-amber" cx="50%" cy="50%" r="50%">
+      <stop offset="0" stop-color="#fbbf24" stop-opacity="0.22"/>
+      <stop offset="1" stop-color="#fbbf24" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect x="0" y="0" width="1920" height="960" fill="url(#bg)"/>
+
+  <circle cx="180" cy="120" r="340" fill="url(#glow-amber)"/>
+  <circle cx="1750" cy="220" r="380" fill="url(#glow)"/>
+  <circle cx="120" cy="820" r="360" fill="url(#glow)"/>
+  <circle cx="1820" cy="860" r="320" fill="url(#glow-amber)"/>
+
+  <!-- faint oversized mascot silhouette, echoing assets/icon.png -->
+  <g transform="translate(960,510)" opacity="0.11">
+    <line x1="0" y1="-330" x2="0" y2="-268" stroke="#ffffff" stroke-width="14" stroke-linecap="round"/>
+    <circle cx="0" cy="-352" r="26" fill="#ffffff"/>
+    <rect x="-170" y="-262" width="340" height="360" rx="92" fill="#ffffff"/>
+    <circle cx="-178" cy="-90" r="34" fill="#ffffff"/>
+    <circle cx="178" cy="-90" r="34" fill="#ffffff"/>
+    <rect x="-135" y="-190" width="270" height="150" rx="45" fill="#ffffff"/>
+  </g>
+
+  <!-- scattered accent motifs -->
+  <g fill="#ffffff">
+    <!-- tiny dice (5-pip) -->
+    <g transform="translate(300,180)" opacity="0.5">
+      <rect x="-40" y="-40" width="80" height="80" rx="18" fill="#ffffff"/>
+      <circle cx="-17" cy="-17" r="7" fill="#4c1d95"/>
+      <circle cx="17" cy="-17" r="7" fill="#4c1d95"/>
+      <circle cx="0" cy="0" r="7" fill="#4c1d95"/>
+      <circle cx="-17" cy="17" r="7" fill="#4c1d95"/>
+      <circle cx="17" cy="17" r="7" fill="#4c1d95"/>
+    </g>
+    <g transform="translate(1560,760) rotate(18)" opacity="0.4">
+      <rect x="-32" y="-32" width="64" height="64" rx="14" fill="#ffffff"/>
+      <circle cx="-13" cy="-13" r="5" fill="#134e4a"/>
+      <circle cx="13" cy="13" r="5" fill="#134e4a"/>
+    </g>
+    <g transform="translate(1500,180) rotate(-12)" opacity="0.35">
+      <rect x="-28" y="-28" width="56" height="56" rx="12" fill="#ffffff"/>
+      <circle cx="0" cy="-11" r="5" fill="#4c1d95"/>
+      <circle cx="-11" cy="7" r="5" fill="#4c1d95"/>
+      <circle cx="11" cy="7" r="5" fill="#4c1d95"/>
+    </g>
+    <g transform="translate(340,760) rotate(8)" opacity="0.4">
+      <rect x="-30" y="-30" width="60" height="60" rx="13" fill="#ffffff"/>
+      <circle cx="0" cy="0" r="6" fill="#134e4a"/>
+    </g>
+
+    <!-- sparkles -->
+    <g opacity="0.55">
+      <path d="M480 130 l9 22 22 9 -22 9 -9 22 -9 -22 -22 -9 22 -9 z"/>
+    </g>
+    <g opacity="0.4">
+      <path d="M1640 480 l7 18 18 7 -18 7 -7 18 -7 -18 -18 -7 18 -7 z"/>
+    </g>
+    <g opacity="0.45">
+      <path d="M260 480 l7 18 18 7 -18 7 -7 18 -7 -18 -18 -7 18 -7 z"/>
+    </g>
+    <g opacity="0.4">
+      <path d="M1440 830 l7 18 18 7 -18 7 -7 18 -7 -18 -18 -7 18 -7 z"/>
+    </g>
+
+    <!-- small confetti dots in brand accent colors -->
+    <circle cx="420" cy="600" r="10" fill="#fbbf24" opacity="0.6"/>
+    <circle cx="1500" cy="620" r="10" fill="#f472b6" opacity="0.55"/>
+    <circle cx="960" cy="850" r="10" fill="#5eead4" opacity="0.55"/>
+    <circle cx="220" cy="330" r="9" fill="#f472b6" opacity="0.5"/>
+    <circle cx="1700" cy="360" r="9" fill="#fbbf24" opacity="0.5"/>
+    <circle cx="960" cy="110" r="9" fill="#5eead4" opacity="0.5"/>
+  </g>
+</svg>
