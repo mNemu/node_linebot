@@ -23,14 +23,6 @@ export const config = {
     credentialsJson: process.env.GOOGLE_SERVICE_ACCOUNT_KEY,
   },
 
-  drive: {
-    baseFolderId: process.env.DRIVE_BASE_FOLDER_ID,
-  },
-
-  maps: {
-    apiKey: process.env.GOOGLE_MAPS_API_KEY,
-  },
-
   mail: {
     host: process.env.SMTP_HOST,
     port: Number(process.env.SMTP_PORT) || 465,

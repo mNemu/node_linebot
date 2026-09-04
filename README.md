@@ -1,37 +1,37 @@
 # node_linebot
 
-Node.js (Express) 製のLINE Bot。`@BOT`へのメンションでコマンドを認識し、Google Calendar/Driveとの連携、
-経路検索、メッセージのメールへのダイジェスト転送などを行う。
+Node.js (Express) 製のLINE Bot。`@BOT`へのメンションでコマンドを認識する。
+LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット試算**の2つだけに絞ってあり、
+それ以外の設定(メール転送・予定通知など)はサーバー側のCLIから行う。
 
 ## できること
 
 `@BOT` にメンションすると以下のコマンドを認識する（`SELF_NAME` で変更可）。
 
 - `nDm` - ダイスロール（例: `@BOT 2D6`)
-- `A から B` - Google Maps 経路検索（車・電車）
-- `sch view / sch set ...` - Google カレンダーで予定を表示・登録
-- `alb list / set / unset / url ...` - 画像/動画の保存先アルバム(Google Drive フォルダ)を管理
 - `diet 目標値 目標日 初期値 [開始日]` - 減量ペースの試算
-- `cfg list / get / set ...` - 会話ごとの設定(Calendar/Folder/メール転送設定)を管理
 
 メンションなしのメッセージ・スタンプ・画像/動画添付も含め、すべてのメッセージは会話ごとにSQLiteへログされ、
-`cfg set recipient ...` が設定されていれば10分デバウンスでダイジェストメールとして転送される。
+`recipient` 設定(サーバー側の `node scripts/cfg.js` で設定)があれば10分デバウンスでダイジェストメールとして転送される
+(画像/動画添付はファイル自体の保存はせず、「添付が届いた」旨だけがログ・ダイジェストメールに記録される)。
+
+`DAILY_SCHEDULE_TARGET` を設定した会話には、5日先の予定を毎日8:00 JSTに通知するバッチも(サーバー側の設定のみで)動く。
 
 ## 構成
 
 | ディレクトリ/ファイル | 役割 |
 |---|---|
 | `src/index.js` | Expressサーバー本体。`/webhook` でLINEイベントを受信 |
-| `src/handlers/selecter.js` | 受信イベントのディスパッチ、SQLiteへのログ記録 |
-| `src/handlers/*.js` | 各コマンド(`dice`/`route`/`diet`/`cfg`/`help`)の実装 |
+| `src/handlers/selecter.js` | 受信イベントのディスパッチ(`dice`/`diet`のみ)、SQLiteへのログ記録 |
+| `src/handlers/dice.js` / `diet.js` / `help.js` | 各コマンドの実装 |
 | `src/line/*.js` | `@line/bot-sdk` を使ったLINE API呼び出し |
-| `src/google/calendar.js` / `drive.js` | Calendar API v3 / Drive API v3 |
+| `src/google/calendar.js` | Calendar API v3。`DAILY_SCHEDULE_TARGET` の予定通知バッチが使用 |
 | `src/google/mail.js` | nodemailer(SMTP)経由でのダイジェストメール送信 |
 | `src/lib/db.js` | 会話ごとの設定(cfg)とログ(log)を保存するSQLite(`node:sqlite`)ラッパー |
 | `src/lib/cache.js` | プロセス内メモリキャッシュ(node-cache)。プロセス再起動で消える |
 | `src/lib/scheduler.js` | `data/triggers.json` にジョブを永続化する自前の遅延ジョブキュー(10分後のメール送信等)。再起動しても保留中のジョブは復元される |
 | `src/cron/dailySchedule.js` | `DAILY_SCHEDULE_TARGET` を設定した場合のみ有効になる、5日先の予定を毎日8:00 JSTに通知するバッチ |
-| `scripts/cfg.js` | サーバー(SSH)から直接 `cfg` の設定を確認・変更するCLI |
+| `scripts/cfg.js` | サーバー(SSH)から会話ごとの設定(Calendar/メール転送設定)を確認・変更するCLI。設定用のLINEコマンドは無い |
 | `scripts/pending.js` | 送信待ちのダイジェストメール一覧を表示するCLI |
 | `scripts/test-post.js` | HTTP層を経由せず `selecter` を直接呼び出す簡易動作確認スクリプト |
 
@@ -39,9 +39,9 @@ Node.js (Express) 製のLINE Bot。`@BOT`へのメンションでコマンドを
 
 ### 1. Google Cloud サービスアカウントを準備する
 
-1. GCPプロジェクトを作成し、以下のAPIを有効化する: Google Drive API, Google Calendar API
+1. GCPプロジェクトを作成し、以下のAPIを有効化する: Google Calendar API
 2. サービスアカウントを作成し、JSON鍵をダウンロードする（`service-account.json`として保存し、リポジトリにはコミットしない）
-3. `alb`(Drive)機能を使う場合は、Drive上のベースフォルダをサービスアカウントのメールアドレス (`xxx@yyy.iam.gserviceaccount.com`) と編集者権限で共有する
+3. `DAILY_SCHEDULE_TARGET` の予定通知を使う場合は、対象のGoogleカレンダーをサービスアカウントと共有する
 
 ### 2. LINE Developers でチャネルを準備する
 
@@ -59,20 +59,18 @@ cp .env.example .env
 ### 4. メール転送用SMTP(任意)
 
 Gmailの「アプリパスワード」等を`SMTP_USER`/`SMTP_PASS`に設定する（サービスアカウントでのGmail送信はGoogle Workspaceの
-ドメイン全体委任が必要になるため、この構成ではSMTP経由の送信を採用している）。設定後、転送したい会話で
-`@BOT cfg set recipient <アドレス>` を送ると、その会話のメッセージが10分デバウンスでメール転送されるようになる
-(`subject`/`replyTo`/`SenderName` も任意で設定可能)。
+ドメイン全体委任が必要になるため、この構成ではSMTP経由の送信を採用している）。設定後、転送したい会話について
+サーバー上で `node scripts/cfg.js set <sname> recipient <アドレス>` を実行すると、その会話のメッセージが
+10分デバウンスでメール転送されるようになる(`subject`/`replyTo`/`SenderName` も任意で設定可能)。
 
-### 5. カレンダー/アルバム機能を使う会話ごとの設定(任意)
+### 5. 会話ごとの設定(任意)
 
-`sch`(カレンダー)・`alb`(Drive)機能を使う会話では、その会話で以下を送って設定する。
+予定通知バッチ(`Calendar`)を使う会話では、サーバー上のシェルから `node scripts/cfg.js` で設定する(下記参照)。
+設定用のLINEコマンドは提供していない。
 
 ```
-@BOT cfg set Calendar <GoogleカレンダーID>
-@BOT cfg set Folder <Drive フォルダID>
+node scripts/cfg.js set <sname> Calendar <GoogleカレンダーID>
 ```
-
-サーバー上のシェルから直接設定したい場合は `node scripts/cfg.js` を使う(下記参照)。
 
 ### 6. インストールと起動
 

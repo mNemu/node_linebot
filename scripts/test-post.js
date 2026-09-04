@@ -1,10 +1,10 @@
 // Local smoke test, equivalent to test.gs's test_post(): feeds a sample
 // LINE text-message event straight into the handler, bypassing HTTP and
-// signature validation. Requires a real .env (Google credentials, sheet
-// ids, etc) since it exercises the same Sheets/Drive/Calendar calls.
+// signature validation. Requires a real .env (Google credentials, etc)
+// since it exercises the same Drive/Calendar/mail calls.
 import { selecter } from '../src/handlers/selecter.js';
 
-const message = process.argv[2] || '@BOT sch view';
+const message = process.argv[2] || '@BOT 2D6';
 
 const event = {
   type: 'message',

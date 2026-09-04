@@ -43,6 +43,25 @@ export function makeFlexSchedule() {
         ],
       });
     },
+    addScheduleLink(date, between, subject, uri) {
+      messages[idx].contents.body.contents.push({
+        type: 'box',
+        layout: 'horizontal',
+        contents: [
+          { type: 'text', text: date, size: 'sm', flex: 5 },
+          { type: 'text', text: between, size: 'sm', flex: 2 },
+          {
+            type: 'text',
+            text: subject,
+            size: 'sm',
+            flex: 5,
+            color: '#800080',
+            wrap: true,
+            action: { type: 'uri', label: 'detail', uri },
+          },
+        ],
+      });
+    },
     addMemo(memo) {
       messages[idx].contents.body.contents.push({
         type: 'box',
@@ -62,22 +81,6 @@ export function makeFlexSchedule() {
             size: 'sm',
             wrap: true,
             action: { type: 'uri', label: 'memo', uri: link },
-          },
-        ],
-      });
-    },
-    addActMessage(memo, actText) {
-      messages[idx].contents.body.contents.push({
-        type: 'box',
-        layout: 'horizontal',
-        contents: [
-          {
-            type: 'text',
-            text: memo,
-            color: '#800080',
-            size: 'sm',
-            wrap: true,
-            action: { type: 'message', text: actText },
           },
         ],
       });

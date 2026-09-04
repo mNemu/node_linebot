@@ -1,10 +1,7 @@
 import { GoogleAuth } from 'google-auth-library';
 import { config } from '../config.js';
 
-const SCOPES = [
-  'https://www.googleapis.com/auth/drive',
-  'https://www.googleapis.com/auth/calendar',
-];
+const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
 let authClient;
 

@@ -1,9 +1,9 @@
-// Server-side CLI for the per-conversation config the LINE `cfg` command
-// manages (Calendar/Folder/mail digest settings), for when it's easier to
-// set from a shell on the box than from inside a LINE chat.
+// Server-side CLI for the per-conversation config (Calendar/mail digest
+// settings) that used to be managed via a LINE `cfg` command; now set from a
+// shell on the box instead.
 import { getCfg, setCfg, listCfg, listSnames } from '../src/lib/db.js';
 
-const KEYS = ['Calendar', 'Folder', 'recipient', 'subject', 'replyTo', 'SenderName'];
+const KEYS = ['Calendar', 'recipient', 'subject', 'replyTo', 'SenderName'];
 
 function usage() {
   console.error(

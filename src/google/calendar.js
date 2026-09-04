@@ -57,6 +57,7 @@ function toDetail(ev) {
     id: ev.id,
     title: ev.summary ?? '',
     description: ev.description ?? '',
+    htmlLink: ev.htmlLink ?? '',
     start: moment(ev.start?.dateTime ?? ev.start?.date),
     end: moment(ev.end?.dateTime ?? ev.end?.date),
   };
@@ -245,7 +246,7 @@ export async function viewSchedule(sname, date, schid) {
   for (const ev of events) {
     const diffHours = ev.end.diff(ev.start, 'm') / 60;
     const tStart = diffHours % 24 === 0 ? ev.start.format('MM/DD(ddd)') : ev.start.format('MM/DD(ddd) HH:mm');
-    flexMessage.addSchedule(tStart, `${diffHours}h`, ev.title, `@BOT sch view detail ${ev.id}`);
+    flexMessage.addScheduleLink(tStart, `${diffHours}h`, ev.title, ev.htmlLink);
     if (date === 'detail' && ev.description !== '') {
       flexMessage.addMemo(ev.description);
     }
@@ -254,7 +255,7 @@ export async function viewSchedule(sname, date, schid) {
 
   undecideds.forEach((ev, i) => {
     if (i === 0) flexMessage.addMemo('日程未定:');
-    flexMessage.addActMessage(ev.title, `@BOT sch view detail ${ev.id}`);
+    flexMessage.addLink(ev.title, ev.htmlLink);
   });
 
   return flexMessage.messages();
