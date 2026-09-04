@@ -1,6 +1,7 @@
 /** Builds a Flex Message bubble listing a diet.js weight projection:
- * a summary header (total/monthly rate) followed by one row per date. */
-export function makeFlexDiet(totalRate, monthlyRate) {
+ * a summary header (total/monthly rate + realism badge) followed by one row
+ * per date. `realism` is { emoji, color, label } from diet.js's rankRealism(). */
+export function makeFlexDiet(totalRate, monthlyRate, realism) {
   const bubble = {
     type: 'bubble',
     header: {
@@ -22,7 +23,28 @@ export function makeFlexDiet(totalRate, monthlyRate) {
       type: 'box',
       layout: 'vertical',
       spacing: 'sm',
-      contents: [],
+      contents: [
+        {
+          type: 'box',
+          layout: 'baseline',
+          backgroundColor: '#f3f4f6',
+          cornerRadius: 'md',
+          paddingAll: 'sm',
+          contents: [
+            { type: 'text', text: realism.emoji, size: 'sm', flex: 0 },
+            {
+              type: 'text',
+              text: realism.label,
+              color: realism.color,
+              weight: 'bold',
+              size: 'sm',
+              margin: 'sm',
+              wrap: true,
+            },
+          ],
+        },
+        { type: 'separator', margin: 'md' },
+      ],
     },
   };
 

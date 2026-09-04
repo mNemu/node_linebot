@@ -1,6 +1,26 @@
 import moment from '../lib/moment.js';
 import { makeFlexDiet } from '../line/flexDiet.js';
 
+// Realism ranking for a monthly weight-loss pace, i.e. how likely it is to
+// stick without rebounding. Thresholds are on the *loss* magnitude (%/30日).
+const REALISM_TIERS = [
+  { max: 2, emoji: '🟢', color: '#22c55e', label: '無理が少なく現実的' },
+  { max: 3, emoji: '🟡', color: '#eab308', label: 'やや積極的だが可能' },
+  { max: 5, emoji: '🟠', color: '#f97316', label: '短期間なら可能だが負担大' },
+  { max: Infinity, emoji: '🔴', color: '#ef4444', label: '継続はあまり推奨されない' },
+];
+
+/** Ranks a monthly rate (mdfp*100, negative = losing weight) by how
+ * realistic/sustainable that pace is. Weight gain/maintenance plans (rate
+ * >= 0) aren't a "diet pace" this table applies to, so they get a neutral tier. */
+function rankRealism(monthlyRatePercent) {
+  if (monthlyRatePercent >= 0) {
+    return { emoji: '⚪', color: '#9ca3af', label: '減量ではありません(維持・増量)' };
+  }
+  const lossPercent = -monthlyRatePercent;
+  return REALISM_TIERS.find((tier) => lossPercent <= tier.max);
+}
+
 /** Projects a weight-change trajectory from fWeight/fDate to tWeight/tDate,
  * stepping daily (<=30 days), weekly (<=210 days) or monthly (>210 days).
  * Ported from diet.gs's diet(), now rendered as a Flex Message. */
@@ -9,7 +29,7 @@ export function diet(tWeight, tDate, fWeight, fDate) {
   const dfp = (tWeight - fWeight) / fWeight;
   const mdfp = -(1 - Math.pow(1 + dfp, 30 / mid));
 
-  const flexDiet = makeFlexDiet(dfp * 100, mdfp * 100);
+  const flexDiet = makeFlexDiet(dfp * 100, mdfp * 100, rankRealism(mdfp * 100));
   flexDiet.addRow(fDate.format('MM/DD(ddd)'), fWeight, { emphasis: true });
 
   let nDate;
