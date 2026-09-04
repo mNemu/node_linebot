@@ -11,6 +11,8 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 - `nDm` - ダイスロール（例: `@BOT 2D6`)
 - `diet 目標値 目標日 初期値 [開始日]` - 減量ペースの試算
 
+このほか、ブラウザで開く汎用の**得点ボード**ページ(`https://<host>/scoreboard/`)がある(下記「得点ボード」参照)。
+
 メンションなしのメッセージ・スタンプ・画像/動画添付も含め、すべてのメッセージは会話ごとにSQLiteへログされ、
 `recipient` 設定(サーバー側の `node scripts/cfg.js` で設定)があれば10分デバウンスでダイジェストメールとして転送される
 (画像/動画添付はファイル自体の保存はせず、「添付が届いた」旨だけがログ・ダイジェストメールに記録される)。
@@ -25,6 +27,8 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 | `src/handlers/selecter.js` | 受信イベントのディスパッチ(`dice`/`diet`のみ)、SQLiteへのログ記録 |
 | `src/handlers/dice.js` / `diet.js` / `help.js` | 各コマンドの実装 |
 | `src/line/*.js` | `@line/bot-sdk` を使ったLINE API呼び出し |
+| `src/scoreboard/rules.js` / `store.js` / `api.js` | 得点ボードの得点計算(純粋関数)・SQLite保存・JSON API(`/scoreboard/api`) |
+| `public/scoreboard/` | 得点ボードのページ本体(HTML/CSS/JS、ログイン無し) |
 | `src/google/calendar.js` | Calendar API v3。`DAILY_SCHEDULE_TARGET` の予定通知バッチが使用 |
 | `src/google/mail.js` | nodemailer(SMTP)経由でのダイジェストメール送信 |
 | `src/lib/db.js` | 会話ごとの設定(cfg)とログ(log)を保存するSQLite(`node:sqlite`)ラッパー |
@@ -84,6 +88,27 @@ npm run dev       # ファイル変更を監視して再起動
 
 `npm run test:webhook -- "@BOT 2D6"` で、HTTP層を経由せず`selecter`を直接呼び出して疎通確認ができる
 （`.env`の各種認証情報が実際に有効である必要がある）。
+
+## 得点ボード
+
+`https://<host>/scoreboard/` で開く、ゲームを問わず使える得点記録ページ
+([YURU](https://github.com/mNemu/YURU) の molkky / golf ページの作りを参考にしたもの)。
+スマホでの入力に特化した単独ページで、LINEのアプリ内ブラウザでも普通のブラウザでも動く。
+
+- **ニックネームだけで使う**: ログインは無く、本人はページ上で入力したニックネームで識別する
+  (端末に保存され、新しいボードの参加者に自動で追加される)。
+- **ゲーム固有のルールは無い**: 参加者をタップして選び、`+1 +2 +3 +5 +10` や任意の点数で加点/減点するだけ。
+  合計点の高い順に順位が付く(同点は同順位)。目標点・バースト・ホール・ハンデといった
+  モルック/ゴルフ固有の機能や、招待URLによる参加者限定ボードは持たない。
+- **複数端末で共有**: 状態はサーバー(SQLite)が持ち、5秒ごとに他の端末の更新を反映する。
+  `#board=<id>` 付きのURLを送れば同じボードを開ける。ボード開始後に「参加」で自分を追加することもできる。
+- **タブ**: ボード(進行中の一覧・入力) / 履歴(終了・中断したボードと記録の一覧) / 成績(ニックネーム別の回数・1位・平均)。
+- **アクセス制限(任意)**: ログインが無いため、`.env` の `SCOREBOARD_KEY` を設定すると API がそのキーを要求する。
+  設定した場合は `https://<host>/scoreboard/?key=<値>` で一度開けば端末に記憶される。未設定なら誰でも使える。
+
+JSON API は `/scoreboard/api` 配下(`GET /boards/active`, `POST /boards`, `POST /boards/:id/turns`,
+`DELETE /boards/:id/turns/last`, `POST /boards/:id/players`, `POST /boards/:id/finish|abort`, `DELETE /boards/:id`,
+`GET /boards?limit=`, `GET /players`, `GET /stats`)。データは `data/linebot.sqlite` の `board*` テーブルに入る。
 
 ## 運用コマンド(サーバー上のシェルから)
 

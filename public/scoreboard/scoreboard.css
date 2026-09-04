@@ -1,0 +1,222 @@
+/* 得点ボード。YURU の static/css/molkky.css の構成を踏襲し、配色をこのボットの
+   ブランド(紫 #5b21b6 / 緑 #0f766e / 琥珀 #fbbf24)に合わせたもの。 */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+:root {
+  --accent: #5b21b6;
+  --accent-soft: #ede9fe;
+  --accent-text: #4c1d95;
+  --teal: #0f766e;
+  --amber: #f2a900;
+  --danger: #c0392b;
+  --danger-soft: #fdecea;
+}
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+  background: #f7f7f9 url("/liff/bg.svg") center top / cover no-repeat;
+  color: #1a1a1a;
+  min-height: 100vh;
+  -webkit-tap-highlight-color: transparent;
+}
+button, input { font-family: inherit; }
+
+/* ─── タブナビ ─── */
+.tabs {
+  position: sticky; top: 0; z-index: 10;
+  display: flex;
+  background: var(--accent);
+  box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+}
+.tab-btn {
+  flex: 1; padding: 13px 4px;
+  background: none; border: none;
+  color: rgba(255,255,255,0.65);
+  font-size: 13px; font-weight: 600; cursor: pointer;
+  border-bottom: 3px solid transparent;
+  transition: color .2s, border-color .2s;
+}
+.tab-btn.active { color: #fff; border-bottom-color: #fff; }
+
+.page { display: none; padding: 14px; max-width: 640px; margin: 0 auto; }
+.page.active { display: block; }
+
+.card {
+  background: #fff; border-radius: 14px; padding: 16px; margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.08);
+}
+.card-title { font-size: 13px; font-weight: 700; color: #888; margin-bottom: 10px; letter-spacing: .04em; }
+.hint { font-size: 12px; color: #999; margin-top: 8px; line-height: 1.6; }
+.empty { text-align: center; padding: 28px 0; color: #bbb; font-size: 14px; }
+
+/* ─── フォーム ─── */
+.input-row { display: flex; gap: 8px; }
+.input-row input[type="text"], .input-row input[type="number"] {
+  flex: 1; min-width: 0;
+  padding: 11px 13px; border: 1.5px solid #e0e0e0; border-radius: 9px;
+  font-size: 16px; background: #fafafa;
+}
+.input-row input:focus { outline: none; border-color: var(--accent); background: #fff; }
+.btn-sm {
+  padding: 10px 14px; border: none; border-radius: 9px;
+  font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
+}
+.btn-accent { background: var(--accent); color: #fff; }
+.btn-light  { background: #eee; color: #333; }
+.btn-danger { background: var(--danger-soft); color: var(--danger); }
+.btn-sm:active { opacity: .8; }
+.btn-sm:disabled { opacity: .45; cursor: default; }
+.btn-primary {
+  width: 100%; padding: 14px; margin-top: 14px;
+  background: var(--accent); color: #fff; border: none; border-radius: 12px;
+  font-size: 16px; font-weight: 700; cursor: pointer;
+}
+.btn-primary:active { opacity: .8; }
+.btn-primary:disabled { background: #b0b0b0; cursor: default; }
+.btn-secondary {
+  width: 100%; padding: 13px; margin-top: 10px;
+  background: #fff; color: #333; border: 1.5px solid #ddd; border-radius: 12px;
+  font-size: 15px; font-weight: 600; cursor: pointer;
+}
+.btn-secondary:active { opacity: .7; }
+.btn-secondary.danger { color: var(--danger); border-color: #f5c6c6; }
+
+.chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
+.chip {
+  padding: 7px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text);
+  font-size: 13px; font-weight: 600; border: none; cursor: pointer;
+}
+.chip:active { opacity: .7; }
+
+.name-list { margin-top: 12px; }
+.name-row {
+  display: flex; align-items: center; gap: 8px; padding: 9px 0; border-bottom: 1px solid #f2f2f2;
+}
+.name-row:last-child { border-bottom: none; }
+.name-row .idx { width: 22px; color: #bbb; font-size: 12px; text-align: right; }
+.name-row .nm { flex: 1; font-size: 15px; font-weight: 600; word-break: break-all; }
+.icon-btn {
+  width: 34px; height: 34px; border: none; border-radius: 8px; background: #f3f3f3;
+  color: #555; font-size: 14px; cursor: pointer;
+}
+.icon-btn:active { opacity: .7; }
+.icon-btn:disabled { opacity: .35; }
+.icon-btn.del { color: var(--danger); }
+
+/* ─── ニックネーム ─── */
+.nick-card { border: 2px solid var(--accent-soft); }
+.nick-card .nick-now { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
+.nick-card .nick-now span { color: var(--accent); }
+
+/* ─── 対戦中 ─── */
+.topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
+.topbar-title { flex: 1; min-width: 0; font-size: 14px; font-weight: 700; color: #555; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.now {
+  background: var(--accent); color: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+.now.done { background: var(--amber); }
+.now .lbl { font-size: 12px; opacity: .85; font-weight: 600; }
+.now .who { font-size: 22px; font-weight: 800; margin-top: 2px; line-height: 1.3; word-break: break-all; }
+.now .sub { font-size: 13px; opacity: .9; margin-top: 4px; }
+
+.player-card {
+  background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
+  display: flex; align-items: center; gap: 12px;
+  border: 2px solid transparent; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+  cursor: pointer; transition: border-color .15s;
+}
+.player-card.sel { border-color: var(--accent); background: #faf8ff; }
+.player-card .pos { width: 30px; font-size: 18px; text-align: center; flex-shrink: 0; color: #999; font-weight: 700; }
+.player-card .info { flex: 1; min-width: 0; }
+.player-card .pname { font-size: 15px; font-weight: 700; word-break: break-all; }
+.player-card .meta { font-size: 12px; color: #888; margin-top: 2px; }
+.player-card .score { text-align: right; flex-shrink: 0; }
+.player-card .score .pt { font-size: 30px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.player-card .score .delta { font-size: 11px; color: #999; margin-top: 3px; min-height: 13px; }
+.badge {
+  display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  background: #eee; color: #666; margin-left: 6px; vertical-align: middle;
+}
+.badge.me { background: var(--accent-soft); color: var(--accent-text); }
+.badge.out { background: var(--danger-soft); color: var(--danger); }
+.badge.win { background: #fff3cd; color: #b8860b; }
+
+.pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 4px; }
+.pad-btn {
+  height: 54px; border: none; border-radius: 12px; background: #fff;
+  font-size: 20px; font-weight: 800; color: #1a1a1a; cursor: pointer;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+}
+.pad-btn:active { background: var(--accent-soft); }
+.pad-btn:disabled { opacity: .45; }
+.pad-custom { display: flex; gap: 8px; margin-top: 10px; }
+.pad-custom input[type="number"] {
+  flex: 1; min-width: 0; padding: 11px 13px; border: 1.5px solid #e0e0e0; border-radius: 9px;
+  font-size: 18px; font-weight: 700; background: #fafafa; text-align: center;
+}
+.pad-custom input:focus { outline: none; border-color: var(--accent); background: #fff; }
+.pad-custom .btn-sm { min-width: 74px; font-size: 15px; }
+.pad-actions { display: flex; gap: 8px; margin-top: 12px; }
+.pad-actions button { flex: 1; }
+.pad-actions .btn-danger { flex: 0 0 auto; }
+.game-item.has-del { position: relative; padding-right: 44px; }
+.game-del {
+  position: absolute; right: 0; top: 50%; transform: translateY(-50%);
+  width: 36px; height: 36px; border: none; border-radius: 8px; background: #f6f6f6; color: var(--danger);
+  font-size: 15px; cursor: pointer;
+}
+.game-del:active { opacity: .7; }
+
+/* ─── 順位表 ─── */
+.rank-row {
+  display: flex; align-items: center; gap: 12px; padding: 11px 0; border-bottom: 1px solid #f2f2f2;
+}
+.rank-row:last-child { border-bottom: none; }
+.rank-row .pos { width: 34px; font-size: 20px; text-align: center; flex-shrink: 0; }
+.rank-row .info { flex: 1; min-width: 0; }
+.rank-row .pname { font-size: 15px; font-weight: 700; word-break: break-all; }
+.rank-row .meta { font-size: 12px; color: #888; margin-top: 2px; }
+.rank-row .pt { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
+
+/* ─── 履歴 ─── */
+.game-item { padding: 12px 0; border-bottom: 1px solid #f2f2f2; cursor: pointer; }
+.game-item:last-child { border-bottom: none; }
+.game-item:active { opacity: .6; }
+.game-item .top { display: flex; align-items: center; gap: 8px; font-size: 12px; color: #999; flex-wrap: wrap; }
+.game-item .win { font-size: 15px; font-weight: 700; margin-top: 4px; word-break: break-all; }
+.game-item .sum { font-size: 12px; color: #666; margin-top: 3px; line-height: 1.6; word-break: break-all; }
+
+.detail-page {
+  display: none; position: fixed; inset: 0; background: #f7f7f9; z-index: 150; overflow-y: auto;
+}
+.detail-page.open { display: block; }
+.detail-header {
+  background: #fff; padding: 12px 16px; display: flex; align-items: center; gap: 10px;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.08); position: sticky; top: 0; z-index: 10;
+}
+.btn-back { background: none; border: none; font-size: 22px; cursor: pointer; color: #333; line-height: 1; padding: 2px 6px 2px 0; }
+.detail-header-title { font-size: 16px; font-weight: 600; }
+.detail-content { padding: 16px; max-width: 640px; margin: 0 auto; }
+
+.table-wrap { overflow-x: auto; }
+table.turns { width: 100%; border-collapse: collapse; font-size: 13px; }
+table.turns th, table.turns td { padding: 7px 6px; border-bottom: 1px solid #f2f2f2; text-align: left; }
+table.turns th { font-size: 11px; color: #999; font-weight: 600; }
+table.turns td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.turns td.minus { color: var(--danger); }
+table.turns td.time { font-size: 11px; color: #999; white-space: nowrap; }
+
+/* ─── 成績 ─── */
+table.stats { width: 100%; border-collapse: collapse; font-size: 13px; white-space: nowrap; }
+table.stats th, table.stats td { padding: 8px 6px; border-bottom: 1px solid #f2f2f2; }
+table.stats th { font-size: 11px; color: #999; font-weight: 600; text-align: right; }
+table.stats th:first-child, table.stats td:first-child { text-align: left; }
+table.stats td { text-align: right; font-variant-numeric: tabular-nums; }
+table.stats td:first-child { font-weight: 700; }
+
+.toast {
+  position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%);
+  background: rgba(30,30,30,.92); color: #fff; padding: 10px 22px; border-radius: 24px;
+  font-size: 14px; pointer-events: none; opacity: 0; transition: opacity .25s; z-index: 999;
+  max-width: 90vw; text-align: center;
+}
+.toast.show { opacity: 1; }

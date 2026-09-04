@@ -6,6 +6,7 @@ import { config } from './config.js';
 import { selecter } from './handlers/selecter.js';
 import { initScheduler } from './lib/scheduler.js';
 import { startDailyScheduleCron } from './cron/dailySchedule.js';
+import { scoreboardApi } from './scoreboard/api.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -22,6 +23,10 @@ app.get('/', (req, res) => {
 app.get('/liff/config.js', (req, res) => {
   res.type('application/javascript').send(`window.LIFF_ID = ${JSON.stringify(config.liffId ?? '')};`);
 });
+// Score board JSON API (page itself is static under public/scoreboard/).
+// Mounted before the LINE webhook so its express.json() never touches the
+// webhook's raw body.
+app.use('/scoreboard/api', scoreboardApi);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.post(

@@ -34,6 +34,12 @@ export const config = {
 
   dailyScheduleTarget: process.env.DAILY_SCHEDULE_TARGET,
 
+  // Score board page (public/scoreboard/). Optional shared key gating its API;
+  // leave empty for open access.
+  scoreboard: {
+    key: process.env.SCOREBOARD_KEY || '',
+  },
+
   // LIFF app id backing public/liff/index.html (the dice/diet input forms
   // opened from the rich menu). Managed via scripts/liff.js.
   liffId: process.env.LIFF_ID,

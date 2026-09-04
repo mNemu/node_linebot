@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>得点ボード</title>
+<link rel="stylesheet" href="/scoreboard/scoreboard.css?v=1">
+</head>
+<body>
+
+<nav class="tabs">
+  <button class="tab-btn active" id="tabbtn-game"    onclick="showTab('game')">🏁 ボード</button>
+  <button class="tab-btn"        id="tabbtn-history" onclick="showTab('history')">📜 履歴</button>
+  <button class="tab-btn"        id="tabbtn-stats"   onclick="showTab('stats')">🏆 成績</button>
+</nav>
+
+<div id="tab-game" class="page active"><div id="game-root"><div class="empty">読み込み中…</div></div></div>
+<div id="tab-history" class="page"><div id="history-root"><div class="empty">読み込み中…</div></div></div>
+<div id="tab-stats" class="page"><div id="stats-root"><div class="empty">読み込み中…</div></div></div>
+
+<div class="detail-page" id="detail">
+  <div class="detail-header">
+    <button class="btn-back" onclick="closeDetail()">‹</button>
+    <div class="detail-header-title">ボードの詳細</div>
+  </div>
+  <div class="detail-content" id="detail-content"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script src="/scoreboard/scoreboard.js?v=1"></script>
+</body>
+</html>

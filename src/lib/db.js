@@ -4,7 +4,8 @@ import path from 'node:path';
 import { config } from '../config.js';
 
 fs.mkdirSync(config.dataDir, { recursive: true });
-const db = new DatabaseSync(path.join(config.dataDir, 'linebot.sqlite'));
+/** Shared connection - other modules (e.g. src/scoreboard/store.js) add their own tables to it. */
+export const db = new DatabaseSync(path.join(config.dataDir, 'linebot.sqlite'));
 
 db.exec(`
   CREATE TABLE IF NOT EXISTS cfg (
