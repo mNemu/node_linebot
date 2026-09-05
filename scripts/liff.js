@@ -21,11 +21,21 @@ async function api(method, path, body) {
   return text ? JSON.parse(text) : undefined;
 }
 
+// The LIFF app hosts the dice/diet forms (index.html) and the score pages
+// (molkky/, golf/, scoreboard/) under the same endpoint. `profile` lets the
+// score pages' server verify who is logged in (src/liff/auth.js).
+const appSettings = (url) => ({
+  view: { type: 'full', url },
+  description: 'linebot menu (dice/diet forms, molkky/golf/score pages)',
+  scope: ['profile', 'chat_message.write'],
+});
+
 function usage() {
   console.error(
     'Usage:\n' +
       '  node scripts/liff.js list                    - list LIFF apps on this channel\n' +
       '  node scripts/liff.js create <url>             - register a new LIFF app pointing at <url>\n' +
+      '  node scripts/liff.js update <liffId> <url>    - re-apply scopes/endpoint to an existing app\n' +
       '  node scripts/liff.js delete <liffId>          - remove a LIFF app\n'
   );
   process.exit(1);
@@ -39,14 +49,18 @@ if (cmd === 'list') {
   for (const a of apps) console.log(`${a.liffId}\t${a.view.url}\thttps://liff.line.me/${a.liffId}`);
 } else if (cmd === 'create') {
   if (!arg) usage();
-  const { liffId } = await api('POST', '', {
-    view: { type: 'full', url: arg },
-    description: 'linebot menu (dice/diet input forms)',
-    scope: ['chat_message.write'],
-  });
+  const { liffId } = await api('POST', '', appSettings(arg));
   console.log(`created ${liffId}`);
   console.log(`entry point: https://liff.line.me/${liffId}`);
   console.log(`Set LIFF_ID=${liffId} in .env, restart the bot, then re-run scripts/richmenu.js.`);
+} else if (cmd === 'update') {
+  // Re-applies the current settings (scopes, endpoint) to an existing app,
+  // e.g. after the `profile` scope was added for the score pages' LINE login.
+  if (!arg) usage();
+  const url = process.argv[4];
+  if (!url) usage();
+  await api('PUT', `/${arg}`, appSettings(url));
+  console.log(`updated ${arg} -> ${url}`);
 } else if (cmd === 'delete') {
   if (!arg) usage();
   await api('DELETE', `/${arg}`);

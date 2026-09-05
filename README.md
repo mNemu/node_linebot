@@ -11,8 +11,9 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 - `nDm` - ダイスロール（例: `@BOT 2D6`)
 - `diet 目標値 目標日 初期値 [開始日]` - 減量ペースの試算
 
-このほか、ブラウザで開く汎用の**得点ボード**ページ(`https://<host>/scoreboard/`)がある(下記「得点ボード」参照)。
-また、LIFF(`https://<host>/liff/`) にはダイスとダイエット試算の入力フォームがあり、リッチメニューから開ける。
+このほか LIFF(`https://<host>/liff/`) に、ダイスとダイエット試算の入力フォーム(`/liff/`)と、
+LINEログインで使う得点記録ページ **モルック**(`/liff/molkky/`)・**ゴルフ**(`/liff/golf/`)・**汎用の得点ボード**(`/liff/scoreboard/`)があり、
+いずれもリッチメニューから開ける(下記「得点記録ページ」参照)。
 
 メンションなしのメッセージ・スタンプ・画像/動画添付も含め、すべてのメッセージは会話ごとにSQLiteへログされ、
 `recipient` 設定(サーバー側の `node scripts/cfg.js` で設定)があれば10分デバウンスでダイジェストメールとして転送される
@@ -28,9 +29,11 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 | `src/handlers/selecter.js` | 受信イベントのディスパッチ(`dice`/`diet`のみ)、SQLiteへのログ記録 |
 | `src/handlers/dice.js` / `diet.js` / `help.js` | 各コマンドの実装 |
 | `src/line/*.js` | `@line/bot-sdk` を使ったLINE API呼び出し |
-| `public/liff/` | ダイス/ダイエット試算のLIFFページ |
-| `src/scoreboard/rules.js` / `store.js` / `api.js` | 得点ボードの得点計算(純粋関数)・SQLite保存・JSON API(`/scoreboard/api`) |
-| `public/scoreboard/` | 得点ボードのページ本体(HTML/CSS/JS、ログイン無し) |
+| `public/liff/` | ダイス/ダイエット試算のLIFPフォーム(`index.html`)と、得点記録ページ共通の `liffauth.js`(LIFFログイン)・`score.css` |
+| `src/liff/auth.js` / `me.js` / `errors.js` | LIFFアクセストークンの検証(LINEログイン)、ニックネーム(`/api/me`)、API共通エラー |
+| `src/molkky/` + `public/liff/molkky/` | モルック得点記録(YURU の molkky の移植)。API は `/api/molkky` |
+| `src/golf/` + `public/liff/golf/` | ゴルフ得点記録(YURU の golf の移植、招待URLの参加者限定は無し)。API は `/api/golf`。`sw.js` は圏外用の Service Worker |
+| `src/scoreboard/` + `public/liff/scoreboard/` | 汎用の得点ボード(ゲームを問わない加点/減点)。API は `/api/scoreboard` |
 | `src/google/calendar.js` | Calendar API v3。`DAILY_SCHEDULE_TARGET` の予定通知バッチが使用 |
 | `src/google/mail.js` | nodemailer(SMTP)経由でのダイジェストメール送信。画像メッセージは添付ファイルとして転送 |
 | `src/lib/db.js` | 会話ごとの設定(cfg)とログ(log)を保存するSQLite(`node:sqlite`)ラッパー |
@@ -59,10 +62,14 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 
 ### 2.5. LIFF / リッチメニューを使う場合(任意)
 
-1. `node scripts/liff.js create https://<デプロイ先>/liff/` でLIFFアプリを作成する
+1. `node scripts/liff.js create https://<デプロイ先>/liff/` でLIFFアプリを作成する(エンドポイントは必ず `/liff/` で終える。
+   得点記録ページは `https://liff.line.me/<liffId>/molkky/` のようにそのサブパスとして開く)
 2. 作成された `liffId` を `.env` の `LIFF_ID` に設定する
 3. Botを再起動する
-4. `node scripts/richmenu.js create-and-set assets/richmenu.png` でリッチメニューを反映する
+4. `node scripts/richmenu.js create-and-set assets/richmenu.png` でリッチメニュー(3×3)を反映する
+
+既に作成済みのLIFFアプリには、得点記録ページのLINEログインに必要な `profile` スコープを
+`node scripts/liff.js update <liffId> https://<デプロイ先>/liff/` で付け直す。
 
 ### 3. 環境変数を設定する
 
@@ -101,26 +108,33 @@ npm run dev       # ファイル変更を監視して再起動
 `npm run test:webhook -- "@BOT 2D6"` で、HTTP層を経由せず`selecter`を直接呼び出して疎通確認ができる
 （少なくとも `.env` のLINE認証情報が実際に有効である必要があり、Calendar/メール機能も使う設定ならその認証情報も必要）。
 
-## 得点ボード
+## 得点記録ページ(モルック / ゴルフ / 得点ボード)
 
-`https://<host>/scoreboard/` で開く、ゲームを問わず使える得点記録ページ
-([YURU](https://github.com/mNemu/YURU) の molkky / golf ページの作りを参考にしたもの)。
-スマホでの入力に特化した単独ページで、LINEのアプリ内ブラウザでも普通のブラウザでも動く。
+[YURU](https://github.com/mNemu/YURU) の molkky / golf ページを移植した、スマホ入力向けの単独ページ。
+LIFF のサブパスとして開く(`https://liff.line.me/<liffId>/molkky/` 等。リッチメニューにボタンがある)。
 
-- **ニックネームだけで使う**: ログインは無く、本人はページ上で入力したニックネームで識別する
-  (端末に保存され、新しいボードの参加者に自動で追加される)。
-- **ゲーム固有のルールは無い**: 参加者をタップして選び、`+1 +2 +3 +5 +10` や任意の点数で加点/減点するだけ。
-  合計点の高い順に順位が付く(同点は同順位)。目標点・バースト・ホール・ハンデといった
-  モルック/ゴルフ固有の機能や、招待URLによる参加者限定ボードは持たない。
-- **複数端末で共有**: 状態はサーバー(SQLite)が持ち、5秒ごとに他の端末の更新を反映する。
-  `#board=<id>` 付きのURLを送れば同じボードを開ける。ボード開始後に「参加」で自分を追加することもできる。
-- **タブ**: ボード(進行中の一覧・入力) / 履歴(終了・中断したボードと記録の一覧) / 成績(ニックネーム別の回数・1位・平均)。
-- **アクセス制限(任意)**: ログインが無いため、`.env` の `SCOREBOARD_KEY` を設定すると API がそのキーを要求する。
-  設定した場合は `https://<host>/scoreboard/?key=<値>` で一度開けば端末に記憶される。未設定なら誰でも使える。
+- **LINEログイン + 別途ニックネーム**: 本人は LIFF のアクセストークン(`profile` スコープ)から得た LINE userId で識別する。
+  ただし表示名に LINE の名前は使わず、ページ上で別途設定するニックネーム(`/api/me`、サーバーに保存)を使う。
+  未設定のうちは参加・作成ができず、各ページの上部で入力を促す。
+- **モルック** (`/liff/molkky/`): 参照元と同じルール。個人戦/チーム戦、3連続ミス時「0点に戻す/失格」、
+  50点ちょうどで勝ち・超えたら25点、最初の50点到達後に残りチームで2位以下を決める「続行」、1投取り消し、
+  複数ゲームの同時進行、履歴、個人成績(試合/勝/勝率/投/平均/12点/0点率)。参加者名は自由入力で、本人のニックネームは自動追加される。
+- **ゴルフ** (`/liff/golf/`): 参照元と同じ作りで、各自が自分の打数を「+1打」「次のホール」で入力する。
+  操作は端末の localStorage に追記ログとして保存され、圏外でも入力を続けられ、電波が戻ると
+  `/api/golf/rounds/:id/me/actions` にまとめて送る(サーバーは受理済みの seq を無視するので二重計上しない)。
+  ハンデ(ネット＝グロス−ハンデ)、ホール別打数の補正、別端末への引き継ぎ、全員ホールアウトで自動終了、履歴、個人成績。
+  終了/中断/削除はラウンドを作成した人のみ。**招待URLによる参加者限定ラウンドは実装していない**(すべて公開)。
+  圏外で開き直す用の Service Worker(`/liff/golf/sw.js`)も移植したが、LINE アプリ内ブラウザ(特に iOS)では動かないため、
+  ページ側で「圏外に備えるなら Chrome / Safari で開く」案内を出す(参照元と同じ)。
+- **得点ボード** (`/liff/scoreboard/`): ゲームを問わない汎用版。参加者をタップして加点/減点し、合計点順に順位(同点は同順位)。
+  途中参加、履歴、成績(回数/1位/平均/ベスト)。
+- **複数端末で共有**: いずれも状態はサーバー(SQLite)が持ち、5秒ごとに他端末の更新を反映する。
+  `#game=<id>` / `#round=<id>` / `#board=<id>` 付きのURLを送れば同じものを開ける。
 
-JSON API は `/scoreboard/api` 配下(`GET /boards/active`, `POST /boards`, `POST /boards/:id/turns`,
-`DELETE /boards/:id/turns/last`, `POST /boards/:id/players`, `POST /boards/:id/finish|abort`, `DELETE /boards/:id`,
-`GET /boards?limit=`, `GET /players`, `GET /stats`)。データは `data/linebot.sqlite` の `board*` テーブルに入る。
+JSON API は `/api/me`(ニックネーム)、`/api/molkky`、`/api/golf`、`/api/scoreboard` 配下で、
+すべて `Authorization: Bearer <LIFFアクセストークン>` が必要(LINE の verify / profile API で検証し、10分キャッシュ)。
+開発時は `.env` に `LIFF_DEV_AUTH=1` を入れると `Bearer dev:<userId>` を LINE に問い合わせず受け付ける(本番では絶対に有効にしない)。
+データは `data/linebot.sqlite` の `liff_nickname` / `molkky_*` / `golf_*` / `board*` テーブルに入る。
 
 ## 運用コマンド(サーバー上のシェルから)
 
@@ -131,6 +145,7 @@ node scripts/cfg.js get <sname> <key>               # 設定値を1つ取得
 node scripts/cfg.js set <sname> <key> <value>       # 設定値を1つ変更
 node scripts/liff.js list                           # LIFFアプリ一覧
 node scripts/liff.js create https://<host>/liff/    # LIFFアプリ作成
+node scripts/liff.js update <liffId> https://<host>/liff/  # 既存LIFFアプリのスコープ/URLを付け直す
 node scripts/liff.js delete <liffId>                # LIFFアプリ削除
 node scripts/pending.js                              # 送信待ちのダイジェストメール一覧
 node scripts/richmenu.js list                        # リッチメニュー一覧

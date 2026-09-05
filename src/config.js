@@ -34,11 +34,9 @@ export const config = {
 
   dailyScheduleTarget: process.env.DAILY_SCHEDULE_TARGET,
 
-  // Score board page (public/scoreboard/). Optional shared key gating its API;
-  // leave empty for open access.
-  scoreboard: {
-    key: process.env.SCOREBOARD_KEY || '',
-  },
+  // Dev only: accept `dev:<userId>` bearer tokens on the LIFF score APIs
+  // without contacting LINE (see src/liff/auth.js). Never enable in production.
+  liffDevAuth: process.env.LIFF_DEV_AUTH === '1',
 
   // LIFF app id backing public/liff/index.html (the dice/diet input forms
   // opened from the rich menu). Managed via scripts/liff.js.

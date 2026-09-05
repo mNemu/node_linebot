@@ -4,11 +4,12 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
 <title>得点ボード</title>
-<link rel="stylesheet" href="/scoreboard/scoreboard.css?v=1">
+<link rel="stylesheet" href="/liff/score.css?v=1">
 </head>
 <body>
 
 <nav class="tabs">
+  <a class="tab-home" href="/liff/" title="メニューへ">‹ Top</a>
   <button class="tab-btn active" id="tabbtn-game"    onclick="showTab('game')">🏁 ボード</button>
   <button class="tab-btn"        id="tabbtn-history" onclick="showTab('history')">📜 履歴</button>
   <button class="tab-btn"        id="tabbtn-stats"   onclick="showTab('stats')">🏆 成績</button>
@@ -28,6 +29,9 @@
 
 <div class="toast" id="toast"></div>
 
-<script src="/scoreboard/scoreboard.js?v=1"></script>
+<script src="https://static.line-scdn.net/liff/edge/2/sdk.js"></script>
+<script src="/liff/config.js"></script>
+<script src="/liff/liffauth.js?v=1"></script>
+<script src="/liff/scoreboard/scoreboard.js?v=1"></script>
 </body>
 </html>

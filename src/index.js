@@ -7,6 +7,9 @@ import { selecter } from './handlers/selecter.js';
 import { initScheduler } from './lib/scheduler.js';
 import { startDailyScheduleCron } from './cron/dailySchedule.js';
 import { scoreboardApi } from './scoreboard/api.js';
+import { molkkyApi } from './molkky/api.js';
+import { golfApi } from './golf/api.js';
+import { meApi } from './liff/me.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -23,10 +26,13 @@ app.get('/', (req, res) => {
 app.get('/liff/config.js', (req, res) => {
   res.type('application/javascript').send(`window.LIFF_ID = ${JSON.stringify(config.liffId ?? '')};`);
 });
-// Score board JSON API (page itself is static under public/scoreboard/).
-// Mounted before the LINE webhook so its express.json() never touches the
-// webhook's raw body.
-app.use('/scoreboard/api', scoreboardApi);
+// JSON APIs for the LIFF score pages (public/liff/{molkky,golf,scoreboard}/).
+// All require a LINE login via LIFF access token (src/liff/auth.js). Mounted
+// before the LINE webhook so their express.json() never touches its raw body.
+app.use('/api/me', meApi);
+app.use('/api/molkky', molkkyApi);
+app.use('/api/golf', golfApi);
+app.use('/api/scoreboard', scoreboardApi);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.post(

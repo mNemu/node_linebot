@@ -1,17 +1,11 @@
-/* 得点ボード。YURU の static/js/molkky.js / golf.js の作りを参考にした、
-   汎用の得点記録ページ。サーバ側は src/scoreboard/api.js。
-
-   - ログインは無く、本人は自分で入力したニックネームだけで識別する
-     (端末の localStorage に保存。新しいボードの参加者に自動で追加される)。
-   - 得点にゲーム固有のルールは無い(目標点・バースト・ホール・ハンデ等は無し)。
-     参加者をタップして選び、点数を加点/減点していくだけ。
-   - 状態はサーバが記録ログから計算して返す。他の端末での更新は 5 秒ごとに反映。 */
+/* 汎用の得点ボード。YURU の molkky.js / golf.js の作りを参考にした、ゲームを問わない得点記録ページ。
+   サーバ側は src/scoreboard/api.js。ログインは LIFF(/liff/liffauth.js)で、本人の表示名は
+   LINE 名ではなく /api/me のニックネーム(新しいボードの参加者に自動で追加される)。
+   得点にゲーム固有のルールは無い: 参加者をタップして選び、点数を加点/減点していくだけ。 */
 'use strict';
 
 /* ─── 共通 ─── */
-const API = '/scoreboard/api';
-const NICK_KEY = 'scoreboard.nickname';
-const ACCESS_KEY = 'scoreboard.key';
+const API = '/api/scoreboard';
 const SETUP_KEY = 'scoreboard.setup';
 const QUICK_POINTS = [1, 2, 3, 5, 10];
 
@@ -27,45 +21,7 @@ const toast = (msg, ms = 2200) => {
   toastTimer = setTimeout(() => el.classList.remove('show'), ms);
 };
 
-// アクセスキー(サーバの SCOREBOARD_KEY)。?key=… で一度開けば端末に記憶する
-let accessKey = '';
-try { accessKey = localStorage.getItem(ACCESS_KEY) || ''; } catch (_) {}
-{
-  const params = new URLSearchParams(location.search);
-  const fromUrl = params.get('key');
-  if (fromUrl) {
-    accessKey = fromUrl;
-    try { localStorage.setItem(ACCESS_KEY, fromUrl); } catch (_) {}
-    params.delete('key');
-    const qs = params.toString();
-    try { history.replaceState(null, '', `${location.pathname}${qs ? `?${qs}` : ''}${location.hash}`); } catch (_) {}
-  }
-}
-
-const api = async (path, options = {}) => {
-  let res;
-  try {
-    res = await fetch(API + path, {
-      cache: 'no-store',
-      ...options,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(accessKey ? { 'X-Board-Key': accessKey } : {}),
-        ...(options.headers || {}),
-      },
-    });
-  } catch (_) {
-    throw new Error('通信できません');
-  }
-  let body = null;
-  try { body = await res.json(); } catch (_) { body = null; }
-  if (!res.ok) {
-    const err = new Error((body && body.error) || `エラー (${res.status})`);
-    err.status = res.status;
-    throw err;
-  }
-  return body;
-};
+const api = (path, options) => LiffAuth.api(API + path, options);
 
 const fmtDate = (ms) => {
   if (!ms) return '';
@@ -88,38 +44,8 @@ const showTab = (name) => {
   if (name === 'stats') loadStats();
 };
 
-/* ─── ニックネーム ─── */
-let myName = '';
-try { myName = (localStorage.getItem(NICK_KEY) || '').trim(); } catch (_) {}
-
-const saveNickname = () => {
-  const input = document.getElementById('nick-input');
-  const value = (input ? input.value : '').trim();
-  if (!value) { toast('ニックネームを入力してください'); return; }
-  if (value.length > 32) { toast('ニックネームは32文字以内にしてください'); return; }
-  myName = value;
-  try { localStorage.setItem(NICK_KEY, value); } catch (_) {}
-  toast(`ニックネームを「${value}」にしました`);
-  render();
-};
-
-// ロビー・参加者設定の上に出すニックネーム欄。未入力なら入力を促す
-const nicknameCard = () => `
-  <div class="card nick-card">
-    <div class="card-title">あなたのニックネーム</div>
-    ${myName ? `<div class="nick-now">現在: <span>${esc(myName)}</span></div>` : ''}
-    <div class="input-row">
-      <input type="text" id="nick-input" placeholder="${myName ? '変更するニックネーム' : 'ニックネームを入力'}" maxlength="32" autocomplete="off" enterkeyhint="done">
-      <button class="btn-sm btn-accent" onclick="saveNickname()">${myName ? '変更' : '保存'}</button>
-    </div>
-    <div class="hint">${myName ? '新しいボードの参加者に自動で追加されます。' : 'ニックネームを入れると、ボードの参加者として自分を追加できます。'}</div>
-  </div>`;
-const bindNicknameInput = () => {
-  const input = document.getElementById('nick-input');
-  if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); saveNickname(); } });
-};
-
 /* ─── 状態 ─── */
+let myName = '';
 let view = 'loading';   // lobby | setup | playing | finished
 let board = null;       // 表示中のボード(サーバから返る計算済み状態)
 let activeBoards = [];
@@ -137,6 +63,7 @@ const restoreSetup = () => {
     if (saved && Array.isArray(saved.names)) setup.names = saved.names.filter((n) => typeof n === 'string' && n.trim());
   } catch (_) {}
 };
+window.onNicknameChanged = (me) => { myName = String(me.name || '').trim(); render(); };
 
 const root = () => document.getElementById('game-root');
 const boardLabel = (b) => b.title || b.players.map((p) => p.name).join('・');
@@ -144,6 +71,7 @@ const myIndex = (b) => (myName ? b.players.findIndex((p) => p.name === myName) :
 const leaders = (b) => b.players.filter((p) => p.rank === 1);
 const medal = ['🥇', '🥈', '🥉'];
 const rankMark = (rank) => medal[rank - 1] || `${rank}.`;
+const nickBlock = () => (myName ? '' : LiffAuth.nicknameCard());
 
 const render = () => {
   if (view === 'lobby') renderLobby();
@@ -151,14 +79,15 @@ const render = () => {
   else if (view === 'playing') renderPlaying();
   else if (view === 'finished') renderFinished();
   else root().innerHTML = '<div class="empty">読み込み中…</div>';
+  LiffAuth.bindNickname();
 };
 
 /* ─── ロビー: 進行中ボード一覧 ─── */
 const renderLobby = () => {
   root().innerHTML = `
-    ${nicknameCard()}
+    ${nickBlock()}
     <div class="card">
-      <div class="card-title">進行中のボード（${activeBoards.length}）</div>
+      <div class="card-title">進行中のボード(${activeBoards.length})</div>
       ${activeBoards.length === 0 ? '<div class="empty">進行中のボードはありません</div>' : activeBoards.map((b) => `
         <div class="game-item has-del" onclick="openBoard(${b.id})">
           <div class="top"><span>${fmtDate(b.startedAt)} 開始</span><span>${b.players.length}人</span><span>記録 ${b.turns.length}件</span></div>
@@ -169,8 +98,8 @@ const renderLobby = () => {
     </div>
     <button class="btn-primary" onclick="newBoard()">＋ 新しいボード</button>
     <div class="hint" style="text-align:center">複数のボードを同時に進められます。</div>
+    ${myName ? LiffAuth.nicknameCard() : ''}
   `;
-  bindNicknameInput();
 };
 
 const newBoard = () => {
@@ -212,7 +141,7 @@ const openBoard = async (id) => {
 const renderSetup = () => {
   const chips = knownPlayers.filter((n) => !setup.names.includes(n));
   root().innerHTML = `
-    ${myName ? '' : nicknameCard()}
+    ${nickBlock()}
     <div class="card">
       <div class="card-title">参加者</div>
       <div class="input-row">
@@ -235,7 +164,7 @@ const renderSetup = () => {
     </div>
 
     <div class="card">
-      <div class="card-title">ボード名（任意）</div>
+      <div class="card-title">ボード名(任意)</div>
       <div class="input-row">
         <input type="text" id="title-input" placeholder="例: ボウリング 1G" maxlength="40" value="${esc(setup.title)}" oninput="setup.title = this.value">
       </div>
@@ -247,7 +176,6 @@ const renderSetup = () => {
   `;
   const input = document.getElementById('name-input');
   input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addName(); } });
-  bindNicknameInput();
 };
 
 const addName = (name) => {
@@ -315,7 +243,7 @@ const playerCardHtml = (b, p, i) => {
 
 const joinCard = (b) => {
   if (myIndex(b) >= 0) return '';
-  if (!myName) return nicknameCard();
+  if (!myName) return LiffAuth.nicknameCard();
   return `
     <div class="card">
       <div class="card-title">このボードに参加する</div>
@@ -337,7 +265,7 @@ const renderPlaying = () => {
     ${b.players.map((p, i) => playerCardHtml(b, p, i)).join('')}
     <div class="card" style="margin-top:12px">
       <div class="card-title">${sel ? `${esc(sel.name)} に加点・減点` : '得点を入れる参加者をタップしてください'}</div>
-      <div class="pad">
+      <div class="pad five">
         ${QUICK_POINTS.map((p) => `<button class="pad-btn" onclick="addPoints(${p})" ${sel ? '' : 'disabled'}>+${p}</button>`).join('')}
       </div>
       <div class="pad-custom">
@@ -356,12 +284,12 @@ const renderPlaying = () => {
   `;
   const input = document.getElementById('pt-input');
   if (input) input.addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); addCustom(1); } });
-  bindNicknameInput();
 };
 
 const selectPlayer = (i) => {
   selected = selected === i ? null : i;
   renderPlaying();
+  LiffAuth.bindNickname();
   if (selected !== null) { const input = document.getElementById('pt-input'); if (input) input.focus(); }
 };
 
@@ -378,11 +306,11 @@ const addPoints = async (points) => {
     const { board: b } = await api(`/boards/${board.id}/turns`, { method: 'POST', body: JSON.stringify({ playerIndex: selected, points }) });
     board = b;
     toast(`${name} ${signed(points)}`, 1400);
-    renderPlaying();
+    render();
   } catch (err) {
     toast(err.message);
     if (err.status === 409 || err.status === 404) await refreshBoard();
-    else renderPlaying();
+    else render();
   } finally {
     busy = false;
   }
@@ -401,7 +329,7 @@ const undo = async () => {
   try {
     const { board: b } = await api(`/boards/${board.id}/turns/last`, { method: 'DELETE' });
     board = b;
-    renderPlaying();
+    render();
     toast('最後の記録を取り消しました');
   } catch (err) {
     toast(err.message);
@@ -434,7 +362,7 @@ const joinBoard = async () => {
 const finishBoard = async () => {
   if (busy || !board) return;
   const top = leaders(board).map((p) => p.name).join('・');
-  if (!confirm(`このボードを終了しますか？（現在の1位: ${top || '−'}）`)) return;
+  if (!confirm(`このボードを終了しますか?(現在の1位: ${top || '−'})`)) return;
   busy = true;
   try {
     const { board: b } = await api(`/boards/${board.id}/finish`, { method: 'POST' });
@@ -451,7 +379,7 @@ const finishBoard = async () => {
 
 const abortBoard = async () => {
   if (busy || !board) return;
-  if (!confirm('このボードを中断しますか？（記録は履歴に「中断」として残ります）')) return;
+  if (!confirm('このボードを中断しますか?(記録は履歴に「中断」として残ります)')) return;
   busy = true;
   try {
     await api(`/boards/${board.id}/abort`, { method: 'POST' });
@@ -476,7 +404,7 @@ const renderFinished = () => {
     </div>
     <div class="now done">
       <div class="lbl">${b.status === 'aborted' ? 'ボード中断' : 'ボード終了'}</div>
-      <div class="who">${b.status === 'aborted' ? esc(boardLabel(b)) : `🎉 ${top || '−'} が1位！`}</div>
+      <div class="who">${b.status === 'aborted' ? esc(boardLabel(b)) : `🎉 ${top || '−'} が1位!`}</div>
       <div class="sub">${fmtDate(b.startedAt)} 開始・${b.players.length}人・記録 ${b.turns.length}件</div>
     </div>
     <div class="card">
@@ -503,15 +431,13 @@ const loadActive = async () => {
     const changed = JSON.stringify(boards) !== JSON.stringify(activeBoards);
     activeBoards = boards || [];
     if (view === 'loading') {
-      view = activeBoards.length ? 'lobby' : 'setup';
-      if (view === 'setup') newBoard(); else render();
+      if (activeBoards.length) { view = 'lobby'; render(); } else newBoard();
     } else if (view === 'lobby' && changed) {
       renderLobby();
+      LiffAuth.bindNickname();
     }
   } catch (err) {
-    if (view === 'loading') {
-      root().innerHTML = `<div class="empty">読み込みに失敗しました<br>${esc(err.message)}${err.status === 403 ? '<br><span style="font-size:12px">アクセスキー付きのリンク(?key=…)から開き直してください</span>' : ''}</div>`;
-    }
+    if (view === 'loading') root().innerHTML = `<div class="empty">読み込みに失敗しました<br>${esc(err.message)}</div>`;
   }
 };
 
@@ -534,7 +460,7 @@ const loadPlayers = async () => {
   try {
     const { players } = await api('/players');
     knownPlayers = players || [];
-    if (view === 'setup') renderSetup();
+    if (view === 'setup') { renderSetup(); LiffAuth.bindNickname(); }
   } catch (_) {}
 };
 
@@ -589,7 +515,7 @@ const showDetail = async (id) => {
           </div>`).join('')}
       </div>
       <div class="card">
-        <div class="card-title">記録（${b.turns.length}件）</div>
+        <div class="card-title">記録(${b.turns.length}件)</div>
         ${b.turns.length === 0 ? '<div class="empty">記録なし</div>' : `
         <div class="table-wrap"><table class="turns">
           <thead><tr><th>#</th><th>名前</th><th style="text-align:right">点</th><th style="text-align:right">累計</th><th>時刻</th></tr></thead>
@@ -617,7 +543,7 @@ const deleteBoard = async (id) => {
   if (busy) return;
   const target = (board && board.id === id) ? board : activeBoards.find((b) => b.id === id);
   const label = target ? boardLabel(target) : 'このボード';
-  if (!confirm(`「${label}」を削除しますか？\n記録は残らず、履歴・成績にも含まれません。`)) return;
+  if (!confirm(`「${label}」を削除しますか?\n記録は残らず、履歴・成績にも含まれません。`)) return;
   busy = true;
   try {
     await api(`/boards/${id}`, { method: 'DELETE' });
@@ -642,7 +568,7 @@ const loadStats = async () => {
     const pct = (v) => `${Math.round(v * 100)}%`;
     el.innerHTML = `
       <div class="card">
-        <div class="card-title">個人成績（終了したボードのみ）</div>
+        <div class="card-title">個人成績(終了したボードのみ)</div>
         <div class="table-wrap"><table class="stats">
           <thead><tr><th>名前</th><th>回数</th><th>1位</th><th>1位率</th><th>平均</th><th>ベスト</th></tr></thead>
           <tbody>
@@ -664,10 +590,19 @@ const loadStats = async () => {
 };
 
 /* ─── 初期化 ─── */
-restoreSetup();
-const hashBoard = (location.hash.match(/^#board=(\d+)$/) || [])[1];
-if (hashBoard) {
-  openBoard(Number(hashBoard)).then(loadActive).then(loadPlayers);
-} else {
-  loadActive().then(loadPlayers);
-}
+(async () => {
+  try {
+    const { me } = await LiffAuth.init();
+    myName = String(me.name || '').trim();
+  } catch (err) {
+    root().innerHTML = `<div class="empty">ログインできませんでした<br>${esc(err.message)}</div>`;
+    return;
+  }
+  restoreSetup();
+  const hashBoard = (location.hash.match(/^#board=(\d+)$/) || [])[1];
+  if (hashBoard) {
+    openBoard(Number(hashBoard)).then(loadActive).then(loadPlayers);
+  } else {
+    loadActive().then(loadPlayers);
+  }
+})();

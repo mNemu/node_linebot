@@ -1,5 +1,6 @@
-/* 得点ボード。YURU の static/css/molkky.css の構成を踏襲し、配色をこのボットの
-   ブランド(紫 #5b21b6 / 緑 #0f766e / 琥珀 #fbbf24)に合わせたもの。 */
+/* 得点記録ページ共通スタイル(モルック / ゴルフ / 得点ボード)。
+   YURU の static/css/molkky.css + golf.css を移植し、配色をこのボットの
+   ブランド(紫 #5b21b6 / 緑 #0f766e / 琥珀 #f2a900)に合わせたもの。 */
 *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 :root {
   --accent: #5b21b6;
@@ -35,6 +36,11 @@ button, input { font-family: inherit; }
   transition: color .2s, border-color .2s;
 }
 .tab-btn.active { color: #fff; border-bottom-color: #fff; }
+.tab-home {
+  flex: 0 0 auto; display: flex; align-items: center; padding: 0 12px;
+  color: rgba(255,255,255,0.85); font-size: 13px; font-weight: 600; text-decoration: none;
+  border-right: 1px solid rgba(255,255,255,0.25);
+}
 
 .page { display: none; padding: 14px; max-width: 640px; margin: 0 auto; }
 .page.active { display: block; }
@@ -55,12 +61,21 @@ button, input { font-family: inherit; }
   font-size: 16px; background: #fafafa;
 }
 .input-row input:focus { outline: none; border-color: var(--accent); background: #fff; }
+.form-row { margin-top: 10px; }
+.form-row label { display: block; font-size: 12px; color: #888; font-weight: 700; margin-bottom: 4px; }
+.form-row input[type="text"], .form-row input[type="number"] {
+  width: 100%; padding: 11px 13px; border: 1.5px solid #e0e0e0; border-radius: 9px; font-size: 16px; background: #fafafa;
+}
+.form-row input:focus { outline: none; border-color: var(--accent); background: #fff; }
 .btn-sm {
   padding: 10px 14px; border: none; border-radius: 9px;
   font-size: 13px; font-weight: 600; cursor: pointer; white-space: nowrap;
 }
 .btn-accent { background: var(--accent); color: #fff; }
+.btn-green  { background: var(--accent); color: #fff; }
+.btn-gray   { background: #555; color: #fff; }
 .btn-light  { background: #eee; color: #333; }
+.btn-red    { background: #ff4444; color: #fff; }
 .btn-danger { background: var(--danger-soft); color: var(--danger); }
 .btn-sm:active { opacity: .8; }
 .btn-sm:disabled { opacity: .45; cursor: default; }
@@ -79,12 +94,20 @@ button, input { font-family: inherit; }
 .btn-secondary:active { opacity: .7; }
 .btn-secondary.danger { color: var(--danger); border-color: #f5c6c6; }
 
+.seg { display: flex; background: #eee; border-radius: 10px; padding: 3px; }
+.seg button {
+  flex: 1; padding: 9px 4px; border: none; border-radius: 8px; background: none;
+  font-size: 14px; font-weight: 600; color: #666; cursor: pointer;
+}
+.seg button.on { background: #fff; color: var(--accent); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+
 .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 10px; }
 .chip {
   padding: 7px 12px; border-radius: 999px; background: var(--accent-soft); color: var(--accent-text);
   font-size: 13px; font-weight: 600; border: none; cursor: pointer;
 }
 .chip:active { opacity: .7; }
+.chip.member { background: #fff; color: #333; border: 1.5px solid #ddd; }
 
 .name-list { margin-top: 12px; }
 .name-row {
@@ -101,10 +124,26 @@ button, input { font-family: inherit; }
 .icon-btn:disabled { opacity: .35; }
 .icon-btn.del { color: var(--danger); }
 
-/* ─── ニックネーム ─── */
+/* ─── ニックネーム(LiffAuth.nicknameCard) ─── */
 .nick-card { border: 2px solid var(--accent-soft); }
+.nick-card.warn { border-color: #f2c14e; background: #fffbea; }
 .nick-card .nick-now { font-size: 15px; font-weight: 700; margin-bottom: 8px; }
 .nick-card .nick-now span { color: var(--accent); }
+.notice {
+  max-width: 640px; margin: 12px auto 0; padding: 10px 14px;
+  background: #fff3cd; color: #7a5a00; border: 1px solid #f2c14e; border-radius: 10px;
+  font-size: 13px; line-height: 1.6;
+}
+.notice a { color: #b8860b; font-weight: 700; }
+
+/* ─── チーム分け(モルック) ─── */
+.team-box { border: 1.5px solid #e6e6e6; border-radius: 12px; padding: 12px; margin-top: 10px; }
+.team-box input[type="text"] {
+  width: 100%; padding: 8px 10px; border: none; border-bottom: 1.5px solid #e0e0e0;
+  font-size: 15px; font-weight: 700; background: transparent;
+}
+.team-box input:focus { outline: none; border-bottom-color: var(--accent); }
+.team-box .chips { margin-top: 8px; }
 
 /* ─── 対戦中 ─── */
 .topbar { display: flex; align-items: center; gap: 10px; margin-bottom: 10px; }
@@ -118,36 +157,46 @@ button, input { font-family: inherit; }
 .now .who { font-size: 22px; font-weight: 800; margin-top: 2px; line-height: 1.3; word-break: break-all; }
 .now .sub { font-size: 13px; opacity: .9; margin-top: 4px; }
 
-.player-card {
+.team-card, .player-card {
   background: #fff; border-radius: 12px; padding: 12px 14px; margin-bottom: 8px;
   display: flex; align-items: center; gap: 12px;
   border: 2px solid transparent; box-shadow: 0 1px 3px rgba(0,0,0,0.06);
-  cursor: pointer; transition: border-color .15s;
+  transition: border-color .15s;
 }
-.player-card.sel { border-color: var(--accent); background: #faf8ff; }
+.team-card.turn, .player-card.sel { border-color: var(--accent); }
+.player-card { cursor: pointer; }
+.player-card.sel { background: #faf8ff; }
+.team-card.out { opacity: .5; }
+.team-card.done { opacity: .75; background: #fffdf5; }
+.team-card .info, .player-card .info { flex: 1; min-width: 0; }
+.team-card .tname, .player-card .pname { font-size: 15px; font-weight: 700; word-break: break-all; }
+.team-card .members, .player-card .meta { font-size: 12px; color: #888; margin-top: 2px; word-break: break-all; }
+.team-card .members b { color: var(--accent); }
+.team-card .miss { margin-top: 5px; font-size: 11px; color: #999; letter-spacing: 2px; }
+.team-card .miss .on { color: #e74c3c; }
+.team-card .score, .player-card .score { text-align: right; flex-shrink: 0; }
+.team-card .score .pt, .player-card .score .pt { font-size: 30px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
+.team-card .score .left, .player-card .score .delta { font-size: 11px; color: #999; margin-top: 3px; min-height: 13px; }
 .player-card .pos { width: 30px; font-size: 18px; text-align: center; flex-shrink: 0; color: #999; font-weight: 700; }
-.player-card .info { flex: 1; min-width: 0; }
-.player-card .pname { font-size: 15px; font-weight: 700; word-break: break-all; }
-.player-card .meta { font-size: 12px; color: #888; margin-top: 2px; }
-.player-card .score { text-align: right; flex-shrink: 0; }
-.player-card .score .pt { font-size: 30px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; }
-.player-card .score .delta { font-size: 11px; color: #999; margin-top: 3px; min-height: 13px; }
 .badge {
   display: inline-block; padding: 2px 8px; border-radius: 999px; font-size: 11px; font-weight: 700;
   background: #eee; color: #666; margin-left: 6px; vertical-align: middle;
 }
-.badge.me { background: var(--accent-soft); color: var(--accent-text); }
 .badge.out { background: var(--danger-soft); color: var(--danger); }
 .badge.win { background: #fff3cd; color: #b8860b; }
+.badge.me { background: var(--accent-soft); color: var(--accent-text); }
 
-.pad { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 4px; }
+.pad { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin-top: 4px; }
+.pad.five { grid-template-columns: repeat(5, 1fr); }
 .pad-btn {
-  height: 54px; border: none; border-radius: 12px; background: #fff;
-  font-size: 20px; font-weight: 800; color: #1a1a1a; cursor: pointer;
+  height: 58px; border: none; border-radius: 12px; background: #fff;
+  font-size: 24px; font-weight: 800; color: #1a1a1a; cursor: pointer;
   box-shadow: 0 1px 3px rgba(0,0,0,0.1);
 }
+.pad.five .pad-btn { height: 54px; font-size: 20px; }
 .pad-btn:active { background: var(--accent-soft); }
-.pad-btn:disabled { opacity: .45; }
+.pad-btn:disabled { opacity: .5; }
+.pad-btn.zero { grid-column: 1 / -1; background: var(--danger-soft); color: var(--danger); font-size: 18px; height: 52px; }
 .pad-custom { display: flex; gap: 8px; margin-top: 10px; }
 .pad-custom input[type="number"] {
   flex: 1; min-width: 0; padding: 11px 13px; border: 1.5px solid #e0e0e0; border-radius: 9px;
@@ -173,8 +222,8 @@ button, input { font-family: inherit; }
 .rank-row:last-child { border-bottom: none; }
 .rank-row .pos { width: 34px; font-size: 20px; text-align: center; flex-shrink: 0; }
 .rank-row .info { flex: 1; min-width: 0; }
-.rank-row .pname { font-size: 15px; font-weight: 700; word-break: break-all; }
-.rank-row .meta { font-size: 12px; color: #888; margin-top: 2px; }
+.rank-row .tname, .rank-row .pname { font-size: 15px; font-weight: 700; word-break: break-all; }
+.rank-row .members, .rank-row .meta { font-size: 12px; color: #888; margin-top: 2px; }
 .rank-row .pt { font-size: 22px; font-weight: 800; font-variant-numeric: tabular-nums; }
 
 /* ─── 履歴 ─── */
@@ -202,6 +251,7 @@ table.turns { width: 100%; border-collapse: collapse; font-size: 13px; }
 table.turns th, table.turns td { padding: 7px 6px; border-bottom: 1px solid #f2f2f2; text-align: left; }
 table.turns th { font-size: 11px; color: #999; font-weight: 600; }
 table.turns td.num { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+table.turns td.ev { font-size: 11px; color: var(--danger); white-space: nowrap; }
 table.turns td.minus { color: var(--danger); }
 table.turns td.time { font-size: 11px; color: #999; white-space: nowrap; }
 
@@ -220,3 +270,58 @@ table.stats td:first-child { font-weight: 700; }
   max-width: 90vw; text-align: center;
 }
 .toast.show { opacity: 1; }
+
+/* ─── ゴルフ固有 ─── */
+.sync {
+  display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 11px; font-weight: 700;
+  background: var(--accent-soft); color: var(--accent-text); white-space: nowrap;
+}
+.sync.pending { background: #fff3cd; color: #b8860b; }
+.sync.offline { background: var(--danger-soft); color: var(--danger); }
+.topbar .sync { flex-shrink: 0; }
+.me-card {
+  background: var(--teal); color: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12);
+}
+.me-card .lbl { font-size: 12px; opacity: .85; font-weight: 600; }
+.me-card .hole { font-size: 22px; font-weight: 800; margin-top: 2px; }
+.me-card .count { font-size: 56px; font-weight: 800; line-height: 1; text-align: center; margin: 8px 0; }
+.me-card .sub { font-size: 13px; opacity: .9; text-align: center; }
+.me-card.done { background: var(--amber); }
+.stroke-btn {
+  width: 100%; height: 88px; border: none; border-radius: 14px; background: #fff; color: var(--teal);
+  font-size: 30px; font-weight: 800; cursor: pointer; box-shadow: 0 2px 6px rgba(0,0,0,.15);
+  margin-top: 10px;
+}
+.stroke-btn:active { background: #ccfbf1; }
+.stroke-btn:disabled { opacity: .5; }
+.me-actions { display: flex; gap: 8px; margin-top: 10px; }
+.me-actions button { flex: 1; }
+.me-actions .btn-white { background: #fff; color: #333; }
+.me-actions .btn-dark { background: rgba(0,0,0,.25); color: #fff; }
+.holes { display: grid; grid-template-columns: repeat(9, 1fr); gap: 4px; margin-top: 10px; }
+.holes.wide { grid-template-columns: repeat(6, 1fr); }
+.holes button {
+  border: none; border-radius: 8px; background: rgba(255,255,255,.2); color: #fff; padding: 6px 0;
+  font-size: 12px; cursor: pointer; line-height: 1.3;
+}
+.holes button b { display: block; font-size: 16px; }
+.holes button.cur { background: #fff; color: var(--teal); }
+.holes button.todo { opacity: .55; }
+table.board { width: 100%; border-collapse: collapse; font-size: 12px; white-space: nowrap; }
+table.board th, table.board td { padding: 6px 4px; border-bottom: 1px solid #f2f2f2; text-align: center; }
+table.board th { font-size: 10px; color: #999; font-weight: 600; }
+table.board td.name, table.board th.name { text-align: left; font-weight: 700; font-size: 13px; position: sticky; left: 0; background: #fff; }
+table.board td.pos { width: 24px; color: #999; }
+table.board td.cur { background: #ccfbf1; color: var(--teal); font-weight: 700; }
+table.board td.todo { color: #ccc; }
+table.board td.sum { font-weight: 800; font-size: 14px; }
+table.board tr.me td { background: #fffbea; }
+table.board tr.me td.name { background: #fffbea; }
+table.board .fin { color: #b8860b; font-size: 10px; }
+.offline-note { font-size: 12px; color: var(--danger); margin-top: 8px; line-height: 1.6; }
+.ext-notice { margin: 0 0 12px; }
+.ext-notice .ext-title { font-weight: 700; font-size: 14px; margin-bottom: 4px; }
+.ext-notice .ext-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 8px; }
+.ext-notice .ext-actions a { text-decoration: none; display: inline-block; }
+.ext-notice .ext-sub { font-size: 11px; color: #8a6d00; margin-top: 6px; }

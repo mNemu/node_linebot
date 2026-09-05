@@ -7,27 +7,15 @@
  * rules here (no target score, no bust, no holes/handicap): points simply
  * accumulate and the highest total ranks first. */
 
+import { ConflictError, RuleError } from '../liff/errors.js';
+
+export { ConflictError, RuleError };
+
 export const MAX_PLAYERS = 20;
 export const MAX_NAME_LENGTH = 32;
 export const MAX_TITLE_LENGTH = 40;
 export const MAX_ABS_POINTS = 9999;
 export const STATUSES = ['playing', 'finished', 'aborted'];
-
-/** Bad input from the client (HTTP 400). */
-export class RuleError extends Error {
-  constructor(message) {
-    super(message);
-    this.status = 400;
-  }
-}
-
-/** Operation not allowed in the board's current state (HTTP 409), e.g. adding points to a finished board. */
-export class ConflictError extends Error {
-  constructor(message) {
-    super(message);
-    this.status = 409;
-  }
-}
 
 export function normalizeName(raw) {
   const name = String(raw ?? '').trim();
