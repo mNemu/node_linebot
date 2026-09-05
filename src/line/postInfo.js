@@ -45,6 +45,14 @@ export async function makeLINEPostInfo(jPost) {
     keywords: mInfo ? mInfo.keywords : null,
     timestamp: jPost.timestamp,
     sname,
+    async getContent() {
+      if (!mInfo?.id) return { stream: null, contentType: null };
+      const response = await client.getContentWithHttpInfo(mInfo.id);
+      return {
+        stream: response.body,
+        contentType: response.httpResponse.headers.get('content-type'),
+      };
+    },
     async replay(message, name) {
       if (typeof message === 'string') {
         await client.replyText(replyToken, `${name}${message}`);

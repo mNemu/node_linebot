@@ -1,10 +1,34 @@
 import { makeLINEPostInfo } from '../line/postInfo.js';
 import { appendLog } from '../lib/db.js';
-import { makeMailMessage } from '../google/mail.js';
+import { makeMailMessage, makeMailMessageWithAttachments } from '../google/mail.js';
 import { config } from '../config.js';
 import { dice } from './dice.js';
 import { doDiet } from './diet.js';
 import { viewHelp } from './help.js';
+
+function streamToBuffer(stream) {
+  return new Promise((resolve, reject) => {
+    const chunks = [];
+    stream.on('data', (chunk) => chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk)));
+    stream.once('end', () => resolve(Buffer.concat(chunks)));
+    stream.once('error', reject);
+  });
+}
+
+function extensionFromContentType(contentType) {
+  switch ((contentType || '').toLowerCase()) {
+    case 'image/jpeg':
+      return 'jpg';
+    case 'image/png':
+      return 'png';
+    case 'image/gif':
+      return 'gif';
+    case 'image/webp':
+      return 'webp';
+    default:
+      return 'bin';
+  }
+}
 
 /** Decides what (if anything) to reply when the bot is @-mentioned, and
  * sends the reply. Returns the sent text (or undefined) for logging -
@@ -50,6 +74,24 @@ export async function selecter(jPost) {
   } else if (LPost.mType === 'sticker') {
     logmsg = JSON.stringify(LPost.keywords);
     await makeMailMessage(sname, `${dName}:\n スタンプ: ${LPost.keywords}`, timestamp);
+  } else if (LPost.cType === 'line' && LPost.mType === 'image') {
+    const { stream, contentType } = await LPost.getContent();
+    const id = LPost.mID;
+    logmsg = `${LPost.mType}(${id})`;
+    const content = await streamToBuffer(stream);
+    const ext = extensionFromContentType(contentType);
+    await makeMailMessageWithAttachments(
+      sname,
+      `${dName}:\n 画像を添付しました (${id})`,
+      timestamp,
+      [
+        {
+          filename: `line-image-${id}.${ext}`,
+          content,
+          contentType,
+        },
+      ]
+    );
   } else if (LPost.cType === 'line') {
     const id = LPost.mID;
     logmsg = `${LPost.mType}(${id})`;

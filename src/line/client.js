@@ -47,6 +47,9 @@ export function makeLINEClient() {
     async getContent(messageId) {
       return getBlobClient().getMessageContent(messageId);
     },
+    async getContentWithHttpInfo(messageId) {
+      return getBlobClient().getMessageContentWithHttpInfo(messageId);
+    },
     async getUserProfile(userId) {
       return getClient().getProfile(userId);
     },
