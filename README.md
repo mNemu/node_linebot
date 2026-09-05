@@ -12,6 +12,7 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 - `diet 目標値 目標日 初期値 [開始日]` - 減量ペースの試算
 
 このほか、ブラウザで開く汎用の**得点ボード**ページ(`https://<host>/scoreboard/`)がある(下記「得点ボード」参照)。
+また、LIFF(`https://<host>/liff/`) にはダイスとダイエット試算の入力フォームがあり、リッチメニューから開ける。
 
 メンションなしのメッセージ・スタンプ・画像/動画添付も含め、すべてのメッセージは会話ごとにSQLiteへログされ、
 `recipient` 設定(サーバー側の `node scripts/cfg.js` で設定)があれば10分デバウンスでダイジェストメールとして転送される
@@ -27,6 +28,7 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 | `src/handlers/selecter.js` | 受信イベントのディスパッチ(`dice`/`diet`のみ)、SQLiteへのログ記録 |
 | `src/handlers/dice.js` / `diet.js` / `help.js` | 各コマンドの実装 |
 | `src/line/*.js` | `@line/bot-sdk` を使ったLINE API呼び出し |
+| `public/liff/` | ダイス/ダイエット試算のLIFFページ |
 | `src/scoreboard/rules.js` / `store.js` / `api.js` | 得点ボードの得点計算(純粋関数)・SQLite保存・JSON API(`/scoreboard/api`) |
 | `public/scoreboard/` | 得点ボードのページ本体(HTML/CSS/JS、ログイン無し) |
 | `src/google/calendar.js` | Calendar API v3。`DAILY_SCHEDULE_TARGET` の予定通知バッチが使用 |
@@ -36,7 +38,9 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 | `src/lib/scheduler.js` | `data/triggers.json` にジョブを永続化する自前の遅延ジョブキュー(10分後のメール送信等)。再起動しても保留中のジョブは復元される |
 | `src/cron/dailySchedule.js` | `DAILY_SCHEDULE_TARGET` を設定した場合のみ有効になる、5日先の予定を毎日8:00 JSTに通知するバッチ |
 | `scripts/cfg.js` | サーバー(SSH)から会話ごとの設定(Calendar/メール転送設定)を確認・変更するCLI。設定用のLINEコマンドは無い |
+| `scripts/liff.js` | LIFFアプリの一覧/作成/削除を行うCLI |
 | `scripts/pending.js` | 送信待ちのダイジェストメール一覧を表示するCLI |
+| `scripts/richmenu.js` | リッチメニューの一覧/作成/削除を行うCLI |
 | `scripts/test-post.js` | HTTP層を経由せず `selecter` を直接呼び出す簡易動作確認スクリプト |
 
 ## セットアップ
@@ -45,12 +49,20 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 
 1. GCPプロジェクトを作成し、以下のAPIを有効化する: Google Calendar API
 2. サービスアカウントを作成し、JSON鍵をダウンロードする（`service-account.json`として保存し、リポジトリにはコミットしない）
-3. `DAILY_SCHEDULE_TARGET` の予定通知を使う場合は、対象のGoogleカレンダーをサービスアカウントと共有する
+3. 認証情報は `.env` の `GOOGLE_APPLICATION_CREDENTIALS` に鍵ファイルのパスを入れるか、`GOOGLE_SERVICE_ACCOUNT_KEY` にJSON全文を1行で設定する。GCE/Cloud Run等でADCが使える環境なら未設定でもよい
+4. `DAILY_SCHEDULE_TARGET` の予定通知や会話ごとの `Calendar` 設定を使う場合は、対象カレンダーをその認証主体(サービスアカウント等)から参照できる状態にする
 
 ### 2. LINE Developers でチャネルを準備する
 
 1. Messaging APIチャネルを作成し、チャネルアクセストークン・チャネルシークレットを取得する
 2. Webhook URLを `https://<デプロイ先>/webhook` に設定する
+
+### 2.5. LIFF / リッチメニューを使う場合(任意)
+
+1. `node scripts/liff.js create https://<デプロイ先>/liff/` でLIFFアプリを作成する
+2. 作成された `liffId` を `.env` の `LIFF_ID` に設定する
+3. Botを再起動する
+4. `node scripts/richmenu.js create-and-set assets/richmenu.png` でリッチメニューを反映する
 
 ### 3. 環境変数を設定する
 
@@ -87,7 +99,7 @@ npm run dev       # ファイル変更を監視して再起動
 ### 7. 動作確認
 
 `npm run test:webhook -- "@BOT 2D6"` で、HTTP層を経由せず`selecter`を直接呼び出して疎通確認ができる
-（`.env`の各種認証情報が実際に有効である必要がある）。
+（少なくとも `.env` のLINE認証情報が実際に有効である必要があり、Calendar/メール機能も使う設定ならその認証情報も必要）。
 
 ## 得点ボード
 
@@ -117,10 +129,16 @@ node scripts/cfg.js snames                        # 既知の会話一覧(sname 
 node scripts/cfg.js list <sname>                   # ある会話の設定を一覧表示
 node scripts/cfg.js get <sname> <key>               # 設定値を1つ取得
 node scripts/cfg.js set <sname> <key> <value>       # 設定値を1つ変更
+node scripts/liff.js list                           # LIFFアプリ一覧
+node scripts/liff.js create https://<host>/liff/    # LIFFアプリ作成
+node scripts/liff.js delete <liffId>                # LIFFアプリ削除
 node scripts/pending.js                              # 送信待ちのダイジェストメール一覧
+node scripts/richmenu.js list                        # リッチメニュー一覧
+node scripts/richmenu.js create-and-set assets/richmenu.png  # デフォルトのリッチメニューを作成して反映
+node scripts/richmenu.js delete <richMenuId>         # リッチメニュー削除
 ```
 
-対応キー: `Calendar`, `Folder`, `recipient`, `subject`, `replyTo`, `SenderName`
+対応キー: `Calendar`, `recipient`, `subject`, `replyTo`, `SenderName`
 
 ## 注意事項
 
