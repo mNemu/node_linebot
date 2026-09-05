@@ -19,13 +19,14 @@ async function api(method, path, { headers, body } = {}) {
   return text ? JSON.parse(text) : undefined;
 }
 
-// Matches assets/richmenu.png (source: assets/richmenu.svg): a 2500x1686,
-// 3x3 grid of buttons.
-//   row 1: サイコロ / ダイエット (LIFF input forms, public/liff/index.html), 得点ボード
-//   row 2: モルック / ゴルフ (LIFF score pages, LINE login), メニュー (help)
-//   row 3: dice-roll shortcuts 2D6 / 1D100 / 1D20
-// The score pages are sub-paths of the LIFF endpoint, opened as
-// https://liff.line.me/<liffId>/<page>/ so LIFF login is available.
+// Matches assets/richmenu.png (source: assets/richmenu.svg): a 2500x1124,
+// 3x2 grid of buttons.
+//   row 1: サイコロ / ダイエット (LIFF input forms, public/liff/index.html), メニュー (help)
+//   row 2: モルック / ゴルフ / 得点ボード (LIFF score pages, LINE login)
+// No more fixed dice-roll shortcut buttons (2D6/1D100/1D20) - サイコロ opens
+// the input form instead. The score pages are sub-paths of the LIFF
+// endpoint, opened as https://liff.line.me/<liffId>/<page>/ so LIFF login
+// is available.
 function layout() {
   if (!config.liffId) {
     throw new Error('LIFF_ID is not set - run `node scripts/liff.js create <url>` first, then set it in .env.');
@@ -40,20 +41,17 @@ function layout() {
   });
 
   return {
-    size: { width: 2500, height: 1686 },
+    size: { width: 2500, height: 1124 },
     selected: true,
     name: 'main-menu',
     chatBarText: 'メニュー',
     areas: [
       cell(0, 0, { type: 'uri', uri: liffUrl('dice') }),
       cell(1, 0, { type: 'uri', uri: liffUrl('diet') }),
-      cell(2, 0, { type: 'uri', uri: liffPage('scoreboard') }),
+      cell(2, 0, { type: 'message', text: '@BOT' }),
       cell(0, 1, { type: 'uri', uri: liffPage('molkky') }),
       cell(1, 1, { type: 'uri', uri: liffPage('golf') }),
-      cell(2, 1, { type: 'message', text: '@BOT' }),
-      cell(0, 2, { type: 'message', text: '@BOT 2D6' }),
-      cell(1, 2, { type: 'message', text: '@BOT 1D100' }),
-      cell(2, 2, { type: 'message', text: '@BOT 1D20' }),
+      cell(2, 1, { type: 'uri', uri: liffPage('scoreboard') }),
     ],
   };
 }

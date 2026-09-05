@@ -68,7 +68,8 @@ LINEログインで使う得点記録ページ **モルック**(`/liff/molkky/`)
    得点記録ページは `https://liff.line.me/<liffId>/molkky/` のようにそのサブパスとして開く)
 2. 作成された `liffId` を `.env` の `LIFF_ID` に設定する
 3. Botを再起動する
-4. `node scripts/richmenu.js create-and-set assets/richmenu.png` でリッチメニュー(3×3)を反映する
+4. `node scripts/richmenu.js create-and-set assets/richmenu.png` でリッチメニュー(3×2: サイコロ/ダイエット試算/メニュー、
+   モルック/ゴルフ/得点ボード)を反映する
 
 既に作成済みのLIFFアプリには、得点記録ページのLINEログインに必要な `profile` スコープを
 `node scripts/liff.js update <liffId> https://<デプロイ先>/liff/` で付け直す。
