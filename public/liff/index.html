@@ -13,13 +13,18 @@
     color: #1f2937;
   }
   h1 { font-size: 20px; margin: 0 0 20px; }
-  .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; }
+  .card { background: #ffffff; border-radius: 16px; padding: 20px; box-shadow: 0 1px 3px rgba(0,0,0,0.08); margin-bottom: 16px; overflow: hidden; }
   label { display: block; font-size: 13px; color: #6b7280; margin: 16px 0 6px; }
   label:first-of-type { margin-top: 0; }
   input, select {
-    width: 100%; font-size: 17px; padding: 12px 14px; border: 1px solid #d1d5db; border-radius: 10px;
+    width: 100%; max-width: 100%; min-width: 0; font-size: 17px; padding: 12px 14px;
+    border: 1px solid #d1d5db; border-radius: 10px;
     background: #fff; color: #111827;
+    -webkit-appearance: none; appearance: none;
   }
+  /* iOS/一部Androidの日付入力は、和暦ロケール表記("年/月/日")の分だけ幅を要求し、
+     カード幅より広くはみ出すことがあるため、専用の最小フォントサイズにして収める。 */
+  input[type="date"] { font-size: 16px; }
   input:focus, select:focus { outline: none; border-color: #6366f1; }
   .row { display: flex; gap: 12px; }
   .row > div { flex: 1; }
