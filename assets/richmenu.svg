@@ -1,74 +1,102 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 2500 1686" font-family="sans-serif">
-  <!-- Cell backgrounds -->
-  <rect x="0" y="0" width="833" height="843" fill="#5b21b6"/>
-  <rect x="833" y="0" width="833" height="843" fill="#4c1d95"/>
-  <rect x="1666" y="0" width="834" height="843" fill="#6d28d9"/>
-  <rect x="0" y="843" width="833" height="843" fill="#0f766e"/>
-  <rect x="833" y="843" width="833" height="843" fill="#7c3aed"/>
-  <rect x="1666" y="843" width="834" height="843" fill="#334155"/>
+  <!-- 3x3 cells: columns x=0/833/1666 (w 833/833/834), rows y=0/562/1124 (h 562) -->
+  <rect x="0" y="0" width="833" height="562" fill="#5b21b6"/>
+  <rect x="833" y="0" width="833" height="562" fill="#0f766e"/>
+  <rect x="1666" y="0" width="834" height="562" fill="#4338ca"/>
+  <rect x="0" y="562" width="833" height="562" fill="#b45309"/>
+  <rect x="833" y="562" width="833" height="562" fill="#15803d"/>
+  <rect x="1666" y="562" width="834" height="562" fill="#334155"/>
+  <rect x="0" y="1124" width="833" height="562" fill="#7c3aed"/>
+  <rect x="833" y="1124" width="833" height="562" fill="#4c1d95"/>
+  <rect x="1666" y="1124" width="834" height="562" fill="#6d28d9"/>
 
   <!-- Dividers -->
   <rect x="829" y="0" width="8" height="1686" fill="#ffffff" fill-opacity="0.25"/>
   <rect x="1662" y="0" width="8" height="1686" fill="#ffffff" fill-opacity="0.25"/>
-  <rect x="0" y="839" width="2500" height="8" fill="#ffffff" fill-opacity="0.25"/>
+  <rect x="0" y="558" width="2500" height="8" fill="#ffffff" fill-opacity="0.25"/>
+  <rect x="0" y="1120" width="2500" height="8" fill="#ffffff" fill-opacity="0.25"/>
 
-  <!-- Cell 1: dice input form (416, row1) -->
-  <g transform="translate(416,320)">
-    <rect x="-130" y="-130" width="260" height="260" rx="48" fill="#ffffff"/>
-    <circle cx="-58" cy="-58" r="24" fill="#1f2937"/>
-    <circle cx="58" cy="-58" r="24" fill="#1f2937"/>
-    <circle cx="-58" cy="58" r="24" fill="#1f2937"/>
-    <circle cx="58" cy="58" r="24" fill="#1f2937"/>
-    <circle cx="0" cy="0" r="24" fill="#1f2937"/>
-  </g>
-  <text x="416" y="620" font-size="66" font-weight="bold" fill="#ffffff" text-anchor="middle">サイコロ</text>
-  <text x="416" y="686" font-size="34" fill="#e9d5ff" text-anchor="middle">タップで入力</text>
-
-  <!-- Cell 2: quick roll 1D100 -->
-  <g transform="translate(1250,320)">
-    <rect x="-130" y="-130" width="260" height="260" rx="48" fill="#ffffff"/>
-    <text x="0" y="30" font-size="92" font-weight="bold" fill="#1f2937" text-anchor="middle">100</text>
-  </g>
-  <text x="1250" y="620" font-size="66" font-weight="bold" fill="#ffffff" text-anchor="middle">1D100</text>
-
-  <!-- Cell 3: quick roll 1D20 -->
-  <g transform="translate(2083,320)">
-    <polygon points="0,-140 121,-70 121,70 0,140 -121,70 -121,-70" fill="#ffffff"/>
-    <text x="0" y="30" font-size="92" font-weight="bold" fill="#1f2937" text-anchor="middle">20</text>
-  </g>
-  <text x="2083" y="620" font-size="66" font-weight="bold" fill="#ffffff" text-anchor="middle">1D20</text>
-
-  <!-- Cell 4: diet input form (416, row2) -->
-  <g transform="translate(416,1163)">
-    <circle cx="0" cy="0" r="130" fill="#ffffff"/>
-    <path d="M -60 -50 L 20 30 M 20 30 L 20 -25 M 20 30 L -35 30"
-          stroke="#0f766e" stroke-width="20" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
-  </g>
-  <text x="416" y="1463" font-size="60" font-weight="bold" fill="#ffffff" text-anchor="middle">ダイエット試算</text>
-  <text x="416" y="1529" font-size="34" fill="#ccfbf1" text-anchor="middle">タップで入力</text>
-
-  <!-- Cell 5: quick roll 2D6 -->
-  <g transform="translate(1140,1163)">
-    <rect x="-95" y="-95" width="190" height="190" rx="34" fill="#ffffff"/>
-    <circle cx="-42" cy="-52" r="17" fill="#1f2937"/>
-    <circle cx="42" cy="-52" r="17" fill="#1f2937"/>
-    <circle cx="-42" cy="0" r="17" fill="#1f2937"/>
-    <circle cx="42" cy="0" r="17" fill="#1f2937"/>
-    <circle cx="-42" cy="52" r="17" fill="#1f2937"/>
-    <circle cx="42" cy="52" r="17" fill="#1f2937"/>
-  </g>
-  <g transform="translate(1360,1163)">
-    <rect x="-95" y="-95" width="190" height="190" rx="34" fill="#ffffff"/>
-    <circle cx="-42" cy="-52" r="17" fill="#1f2937"/>
+  <!-- (0,0) dice input form -->
+  <g transform="translate(416,200)">
+    <rect x="-95" y="-95" width="190" height="190" rx="36" fill="#ffffff"/>
+    <circle cx="-42" cy="-42" r="17" fill="#1f2937"/><circle cx="42" cy="-42" r="17" fill="#1f2937"/>
     <circle cx="0" cy="0" r="17" fill="#1f2937"/>
-    <circle cx="42" cy="52" r="17" fill="#1f2937"/>
+    <circle cx="-42" cy="42" r="17" fill="#1f2937"/><circle cx="42" cy="42" r="17" fill="#1f2937"/>
   </g>
-  <text x="1250" y="1463" font-size="66" font-weight="bold" fill="#ffffff" text-anchor="middle">2D6</text>
+  <text x="416" y="408" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">サイコロ</text>
+  <text x="416" y="462" font-size="30" fill="#e9d5ff" text-anchor="middle">タップで入力</text>
 
-  <!-- Cell 6: help / menu -->
-  <g transform="translate(2083,1163)">
-    <circle cx="0" cy="0" r="130" fill="#ffffff"/>
-    <text x="0" y="48" font-size="160" font-weight="bold" fill="#334155" text-anchor="middle">?</text>
+  <!-- (1,0) diet input form -->
+  <g transform="translate(1250,200)">
+    <circle cx="0" cy="0" r="95" fill="#ffffff"/>
+    <path d="M -44 -36 L 14 22 M 14 22 L 14 -18 M 14 22 L -26 22" stroke="#0f766e" stroke-width="15" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
   </g>
-  <text x="2083" y="1463" font-size="66" font-weight="bold" fill="#ffffff" text-anchor="middle">メニュー</text>
+  <text x="1250" y="408" font-size="50" font-weight="bold" fill="#ffffff" text-anchor="middle">ダイエット試算</text>
+  <text x="1250" y="462" font-size="30" fill="#ccfbf1" text-anchor="middle">タップで入力</text>
+
+  <!-- (2,0) generic score board: podium bars -->
+  <g transform="translate(2083,200)">
+    <rect x="-100" y="-100" width="200" height="200" rx="36" fill="#ffffff"/>
+    <rect x="-70" y="-10" width="40" height="80" rx="6" fill="#4338ca"/>
+    <rect x="-20" y="-60" width="40" height="130" rx="6" fill="#4338ca"/>
+    <rect x="30" y="20" width="40" height="50" rx="6" fill="#4338ca"/>
+  </g>
+  <text x="2083" y="408" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">得点ボード</text>
+  <text x="2083" y="462" font-size="30" fill="#c7d2fe" text-anchor="middle">何でも集計</text>
+
+  <!-- (0,1) molkky: pins + throwing stick -->
+  <g transform="translate(416,762)">
+    <rect x="-100" y="-100" width="200" height="200" rx="36" fill="#ffffff"/>
+    <rect x="-62" y="-30" width="30" height="95" rx="12" fill="#b45309"/>
+    <rect x="-15" y="-60" width="30" height="125" rx="12" fill="#b45309"/>
+    <rect x="32" y="-40" width="30" height="105" rx="12" fill="#b45309"/>
+    <circle cx="-47" cy="-42" r="12" fill="#fbbf24"/><circle cx="0" cy="-72" r="12" fill="#fbbf24"/><circle cx="47" cy="-52" r="12" fill="#fbbf24"/>
+  </g>
+  <text x="416" y="970" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">モルック</text>
+  <text x="416" y="1024" font-size="30" fill="#fde68a" text-anchor="middle">得点記録</text>
+
+  <!-- (1,1) golf: flag + ball -->
+  <g transform="translate(1250,762)">
+    <rect x="-100" y="-100" width="200" height="200" rx="36" fill="#ffffff"/>
+    <line x1="-10" y1="-70" x2="-10" y2="55" stroke="#15803d" stroke-width="12" stroke-linecap="round"/>
+    <polygon points="-4,-70 66,-45 -4,-20" fill="#ef4444"/>
+    <circle cx="-48" cy="52" r="17" fill="#15803d"/>
+    <ellipse cx="0" cy="66" rx="80" ry="12" fill="#15803d" fill-opacity="0.25"/>
+  </g>
+  <text x="1250" y="970" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">ゴルフ</text>
+  <text x="1250" y="1024" font-size="30" fill="#bbf7d0" text-anchor="middle">スコア記録</text>
+
+  <!-- (2,1) help / menu -->
+  <g transform="translate(2083,762)">
+    <circle cx="0" cy="0" r="95" fill="#ffffff"/>
+    <text x="0" y="36" font-size="118" font-weight="bold" fill="#334155" text-anchor="middle">?</text>
+  </g>
+  <text x="2083" y="970" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">メニュー</text>
+
+  <!-- (0,2) quick roll 2D6 -->
+  <g transform="translate(340,1324)">
+    <rect x="-68" y="-68" width="136" height="136" rx="26" fill="#ffffff"/>
+    <circle cx="-30" cy="-37" r="12" fill="#1f2937"/><circle cx="30" cy="-37" r="12" fill="#1f2937"/>
+    <circle cx="-30" cy="0" r="12" fill="#1f2937"/><circle cx="30" cy="0" r="12" fill="#1f2937"/>
+    <circle cx="-30" cy="37" r="12" fill="#1f2937"/><circle cx="30" cy="37" r="12" fill="#1f2937"/>
+  </g>
+  <g transform="translate(492,1324)">
+    <rect x="-68" y="-68" width="136" height="136" rx="26" fill="#ffffff"/>
+    <circle cx="-30" cy="-37" r="12" fill="#1f2937"/><circle cx="0" cy="0" r="12" fill="#1f2937"/><circle cx="30" cy="37" r="12" fill="#1f2937"/>
+  </g>
+  <text x="416" y="1532" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">2D6</text>
+
+  <!-- (1,2) quick roll 1D100 -->
+  <g transform="translate(1250,1324)">
+    <rect x="-95" y="-95" width="190" height="190" rx="36" fill="#ffffff"/>
+    <text x="0" y="24" font-size="70" font-weight="bold" fill="#1f2937" text-anchor="middle">100</text>
+  </g>
+  <text x="1250" y="1532" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">1D100</text>
+
+  <!-- (2,2) quick roll 1D20 -->
+  <g transform="translate(2083,1324)">
+    <polygon points="0,-104 90,-52 90,52 0,104 -90,52 -90,-52" fill="#ffffff"/>
+    <text x="0" y="24" font-size="70" font-weight="bold" fill="#1f2937" text-anchor="middle">20</text>
+  </g>
+  <text x="2083" y="1532" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">1D20</text>
 </svg>

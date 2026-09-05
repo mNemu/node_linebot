@@ -20,16 +20,24 @@ async function api(method, path, { headers, body } = {}) {
 }
 
 // Matches assets/richmenu.png (source: assets/richmenu.svg): a 2500x1686,
-// 3x2 grid of buttons. サイコロ/ダイエット open the LIFF input forms
-// (public/liff/index.html) so values/dates can be entered through a real
-// form instead of typed free text; the remaining four slots are dice-roll
-// shortcuts and help, since sch/alb/cfg were retired as LINE-facing commands
-// (server-side config only now - see scripts/cfg.js).
+// 3x3 grid of buttons.
+//   row 1: サイコロ / ダイエット (LIFF input forms, public/liff/index.html), 得点ボード
+//   row 2: モルック / ゴルフ (LIFF score pages, LINE login), メニュー (help)
+//   row 3: dice-roll shortcuts 2D6 / 1D100 / 1D20
+// The score pages are sub-paths of the LIFF endpoint, opened as
+// https://liff.line.me/<liffId>/<page>/ so LIFF login is available.
 function layout() {
   if (!config.liffId) {
     throw new Error('LIFF_ID is not set - run `node scripts/liff.js create <url>` first, then set it in .env.');
   }
   const liffUrl = (view) => `https://liff.line.me/${config.liffId}?view=${view}`;
+  const liffPage = (page) => `https://liff.line.me/${config.liffId}/${page}/`;
+  const W = 833;
+  const H = 562;
+  const cell = (col, row, action) => ({
+    bounds: { x: col * W, y: row * H, width: col === 2 ? 834 : W, height: H },
+    action,
+  });
 
   return {
     size: { width: 2500, height: 1686 },
@@ -37,12 +45,15 @@ function layout() {
     name: 'main-menu',
     chatBarText: 'メニュー',
     areas: [
-      { bounds: { x: 0, y: 0, width: 833, height: 843 }, action: { type: 'uri', uri: liffUrl('dice') } },
-      { bounds: { x: 833, y: 0, width: 833, height: 843 }, action: { type: 'message', text: '@BOT 1D100' } },
-      { bounds: { x: 1666, y: 0, width: 834, height: 843 }, action: { type: 'message', text: '@BOT 1D20' } },
-      { bounds: { x: 0, y: 843, width: 833, height: 843 }, action: { type: 'uri', uri: liffUrl('diet') } },
-      { bounds: { x: 833, y: 843, width: 833, height: 843 }, action: { type: 'message', text: '@BOT 2D6' } },
-      { bounds: { x: 1666, y: 843, width: 834, height: 843 }, action: { type: 'message', text: '@BOT' } },
+      cell(0, 0, { type: 'uri', uri: liffUrl('dice') }),
+      cell(1, 0, { type: 'uri', uri: liffUrl('diet') }),
+      cell(2, 0, { type: 'uri', uri: liffPage('scoreboard') }),
+      cell(0, 1, { type: 'uri', uri: liffPage('molkky') }),
+      cell(1, 1, { type: 'uri', uri: liffPage('golf') }),
+      cell(2, 1, { type: 'message', text: '@BOT' }),
+      cell(0, 2, { type: 'message', text: '@BOT 2D6' }),
+      cell(1, 2, { type: 'message', text: '@BOT 1D100' }),
+      cell(2, 2, { type: 'message', text: '@BOT 1D20' }),
     ],
   };
 }
