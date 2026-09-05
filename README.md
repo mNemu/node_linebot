@@ -15,7 +15,7 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 
 メンションなしのメッセージ・スタンプ・画像/動画添付も含め、すべてのメッセージは会話ごとにSQLiteへログされ、
 `recipient` 設定(サーバー側の `node scripts/cfg.js` で設定)があれば10分デバウンスでダイジェストメールとして転送される
-(画像/動画添付はファイル自体の保存はせず、「添付が届いた」旨だけがログ・ダイジェストメールに記録される)。
+(画像はメールに添付して転送され、動画などそれ以外の添付はファイル自体の保存はせず「添付が届いた」旨だけがログ・ダイジェストメールに記録される)。
 
 `DAILY_SCHEDULE_TARGET` を設定した会話には、5日先の予定を毎日8:00 JSTに通知するバッチも(サーバー側の設定のみで)動く。
 
@@ -30,7 +30,7 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
 | `src/scoreboard/rules.js` / `store.js` / `api.js` | 得点ボードの得点計算(純粋関数)・SQLite保存・JSON API(`/scoreboard/api`) |
 | `public/scoreboard/` | 得点ボードのページ本体(HTML/CSS/JS、ログイン無し) |
 | `src/google/calendar.js` | Calendar API v3。`DAILY_SCHEDULE_TARGET` の予定通知バッチが使用 |
-| `src/google/mail.js` | nodemailer(SMTP)経由でのダイジェストメール送信 |
+| `src/google/mail.js` | nodemailer(SMTP)経由でのダイジェストメール送信。画像メッセージは添付ファイルとして転送 |
 | `src/lib/db.js` | 会話ごとの設定(cfg)とログ(log)を保存するSQLite(`node:sqlite`)ラッパー |
 | `src/lib/cache.js` | プロセス内メモリキャッシュ(node-cache)。プロセス再起動で消える |
 | `src/lib/scheduler.js` | `data/triggers.json` にジョブを永続化する自前の遅延ジョブキュー(10分後のメール送信等)。再起動しても保留中のジョブは復元される |
@@ -65,7 +65,7 @@ cp .env.example .env
 Gmailの「アプリパスワード」等を`SMTP_USER`/`SMTP_PASS`に設定する（サービスアカウントでのGmail送信はGoogle Workspaceの
 ドメイン全体委任が必要になるため、この構成ではSMTP経由の送信を採用している）。設定後、転送したい会話について
 サーバー上で `node scripts/cfg.js set <sname> recipient <アドレス>` を実行すると、その会話のメッセージが
-10分デバウンスでメール転送されるようになる(`subject`/`replyTo`/`SenderName` も任意で設定可能)。
+10分デバウンスでメール転送されるようになる(テキストとスタンプは本文、画像は添付ファイルとして送信。`subject`/`replyTo`/`SenderName` も任意で設定可能)。
 
 ### 5. 会話ごとの設定(任意)
 
