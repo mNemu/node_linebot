@@ -24,8 +24,14 @@ async function api(method, path, body) {
 // The LIFF app hosts the dice/diet forms (index.html) and the score pages
 // (molkky/, golf/, scoreboard/) under the same endpoint. `profile` lets the
 // score pages' server verify who is logged in (src/liff/auth.js).
+//
+// LINE builds each page's actual URL by string-concatenating this endpoint
+// URL with whatever comes after the liffId in the liff.line.me link (e.g.
+// https://liff.line.me/<liffId>/molkky/ -> <endpoint>/molkky/, see
+// scripts/richmenu.js's liffPage()). A trailing slash here would double up
+// with that leading slash, so it's stripped no matter how it's typed.
 const appSettings = (url) => ({
-  view: { type: 'full', url },
+  view: { type: 'full', url: url.replace(/\/+$/, '') },
   description: 'linebot menu (dice/diet forms, molkky/golf/score pages)',
   scope: ['profile', 'chat_message.write'],
 });
