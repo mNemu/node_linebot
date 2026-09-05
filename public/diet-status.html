@@ -1,0 +1,90 @@
+<!doctype html>
+<html lang="ja">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+<title>ダイエット試算のステータスについて</title>
+<style>
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; padding: 24px 20px 40px;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", "Hiragino Sans", "Yu Gothic", "Noto Sans JP", sans-serif;
+    background: #f7f7f9 url("/liff/bg.svg") center top / cover no-repeat;
+    color: #1a1a1a;
+  }
+  h1 { font-size: 19px; margin: 0 0 4px; }
+  .lead { font-size: 13px; color: #666; margin: 0 0 20px; line-height: 1.6; }
+  .card { background: #fff; border-radius: 16px; padding: 18px 20px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); margin-bottom: 16px; max-width: 640px; margin-left: auto; margin-right: auto; }
+  .card-title { font-size: 13px; font-weight: 700; color: #888; margin: 0 0 12px; letter-spacing: .04em; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { padding: 10px 6px; border-bottom: 1px solid #f2f2f2; text-align: left; vertical-align: top; }
+  th { font-size: 12px; color: #999; font-weight: 600; }
+  tr:last-child td { border-bottom: none; }
+  .dot { display: inline-block; width: 11px; height: 11px; border-radius: 50%; margin-right: 6px; vertical-align: middle; }
+  .row-label { font-weight: 700; white-space: nowrap; }
+  .row-comment { font-weight: 700; }
+  .row-note { font-size: 12px; color: #888; margin-top: 2px; line-height: 1.5; }
+  .hint { font-size: 12px; color: #999; margin-top: 8px; line-height: 1.7; }
+  .formula { background: #f3f4f6; border-radius: 10px; padding: 12px 14px; font-size: 13px; color: #333; margin-top: 4px; line-height: 1.7; }
+  .formula code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+</style>
+</head>
+<body>
+  <h1>📉 ダイエット試算のステータスについて</h1>
+  <p class="lead">「diet」コマンドの試算結果に付くバッジは、目標達成に必要な<b>月あたりの体重減少率</b>(30日ごとの減少率)から、無理のなさ・続けやすさの目安を示したものです。</p>
+
+  <div class="card">
+    <div class="card-title">月あたりの体重減少率 と 評価</div>
+    <table>
+      <thead><tr><th>月の減少率</th><th>評価</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="row-label">1〜2%</td>
+          <td><span class="dot" style="background:#22c55e"></span><span class="row-comment" style="color:#22c55e">無理が少なく現実的</span>
+            <div class="row-note">一般的な減量指導でも推奨されやすい、リバウンドしにくいペースです。</div></td>
+        </tr>
+        <tr>
+          <td class="row-label">2〜3%</td>
+          <td><span class="dot" style="background:#eab308"></span><span class="row-comment" style="color:#eab308">やや積極的だが可能</span>
+            <div class="row-note">やや速いペースですが、無理のない食事・運動管理で継続できる範囲です。</div></td>
+        </tr>
+        <tr>
+          <td class="row-label">3〜5%</td>
+          <td><span class="dot" style="background:#f97316"></span><span class="row-comment" style="color:#f97316">短期間なら可能だが負担大</span>
+            <div class="row-note">短期集中では現実的ですが、長期間続けると体への負担が大きくなりやすいペースです。</div></td>
+        </tr>
+        <tr>
+          <td class="row-label">5%以上</td>
+          <td><span class="dot" style="background:#ef4444"></span><span class="row-comment" style="color:#ef4444">継続はあまり推奨されない</span>
+            <div class="row-note">急激な減量はリバウンドや体調不良のリスクが高く、長期間の継続はおすすめしません。</div></td>
+        </tr>
+        <tr>
+          <td class="row-label">(該当外)</td>
+          <td><span class="dot" style="background:#9ca3af"></span><span class="row-comment" style="color:#9ca3af">減量ではありません(維持・増量)</span>
+            <div class="row-note">目標体重が現在より重い(維持・増量)場合は、このランク付けの対象外として表示されます。</div></td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="card">
+    <div class="card-title">数値の意味</div>
+    <div class="hint">
+      「月率」は、開始体重(fWeight)から目標体重(tWeight)まで、目標日までの日数(mid)を等比的に変化させたと仮定したときの、30日あたりの変化率です。<br>
+      月率がマイナス(体重が減る方向)のときだけ上記の表で評価し、絶対値が大きいほど厳しめの評価になります。
+    </div>
+    <div class="formula">
+      dfp = (目標体重 − 開始体重) ÷ 開始体重<br>
+      月率 = <code>-(1 - (1 + dfp)^(30 / 日数))</code> × 100 [%]
+    </div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">ご注意</div>
+    <div class="hint">
+      この評価は一般的な目安であり、医学的なアドバイスではありません。持病がある方・急激な減量を検討している方は、
+      自己判断せず医師・管理栄養士など専門家にご相談ください。
+    </div>
+  </div>
+</body>
+</html>

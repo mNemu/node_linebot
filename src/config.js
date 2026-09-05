@@ -41,4 +41,9 @@ export const config = {
   // LIFF app id backing public/liff/index.html (the dice/diet input forms
   // opened from the rich menu). Managed via scripts/liff.js.
   liffId: process.env.LIFF_ID,
+
+  // Public https origin this server is reachable at (e.g. https://bot.example.com,
+  // no trailing slash). Needed to build absolute URLs for things LINE requires
+  // one for, such as the diet realism badge's tap-through explanation page.
+  publicBaseUrl: (process.env.PUBLIC_BASE_URL || '').replace(/\/+$/, ''),
 };
