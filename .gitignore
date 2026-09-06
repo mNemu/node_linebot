@@ -6,6 +6,9 @@ data/*.sqlite
 !data/.gitkeep
 *.log
 
+# Personal Qiita article drafts / assets - not part of the bot itself
+qiita/
+
 # Local-only ops notes (SSH host/user, sudoers grants for the production
 # server) - public repo, so this must never be committed.
 CLAUDE.md
