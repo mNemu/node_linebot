@@ -5,3 +5,7 @@ data/*.json
 data/*.sqlite
 !data/.gitkeep
 *.log
+
+# Local-only ops notes (SSH host/user, sudoers grants for the production
+# server) - public repo, so this must never be committed.
+CLAUDE.md

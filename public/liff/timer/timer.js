@@ -228,7 +228,10 @@ const tickDisplay = () => {
 setInterval(tickDisplay, 1000);
 
 const tickPoll = () => {
-  if (document.visibilityState !== 'visible' || busy) return;
+  // 作成フォームを開いている間は再描画しない: 全体再描画で <input> が
+  // 差し替わると、日本語IMEの変換中の入力が消えて「名前が入力できない」
+  // ように見えてしまうため。
+  if (document.visibilityState !== 'visible' || busy || createOpen) return;
   loadTimers();
 };
 setInterval(tickPoll, 5000);
