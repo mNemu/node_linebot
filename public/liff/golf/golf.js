@@ -58,9 +58,11 @@ const showTab = (name) => {
   document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
   document.getElementById(`tabbtn-${name}`).classList.add('active');
+  if (name === 'list') loadActive();
   if (name === 'history') loadHistory();
   if (name === 'stats') loadStats();
 };
+const isTabActive = (name) => document.getElementById(`tab-${name}`).classList.contains('active');
 
 /* ─── LINE アプリ内ブラウザ向けの案内 ─── */
 // LINE 内で開いた場合、ページを閉じなければ圏外でも入力できるが、閉じて開き直すには通信が要る
@@ -141,7 +143,8 @@ const savedHandicap = () => { try { return parseInt(localStorage.getItem(HANDICA
 const rememberHandicap = (h) => { try { localStorage.setItem(HANDICAP_KEY, String(h)); } catch (_) {} };
 
 /* ─── 状態 ─── */
-let view = 'loading';    // lobby | create | round | finished
+// 「一覧」は独立したタブ(list-root)なので view には含めない。
+let view = 'create';     // create | round | finished
 let round = null;        // 表示中のラウンド(サーバから返る計算済み状態)
 let local = null;        // 表示中のラウンドでの自分の端末ログ
 let activeRounds = [];
@@ -149,6 +152,7 @@ let busy = false;
 let syncing = false;
 
 const root = () => document.getElementById('game-root');
+const listRoot = () => document.getElementById('list-root');
 const me = () => (round ? round.players.find((p) => p.isMe) : null);
 const pending = () => (local ? local.actions.filter((a) => a.seq > local.syncedSeq) : []);
 const myState = () => {
@@ -159,8 +163,7 @@ const myState = () => {
 const roundLabel = (r) => r.title || `ラウンド ${r.id}`;
 
 const render = () => {
-  if (view === 'lobby') renderLobby();
-  else if (view === 'create') renderCreate();
+  if (view === 'create') renderCreate();
   else if (view === 'round') renderRound();
   else if (view === 'finished') renderFinished();
   else root().innerHTML = '<div class="empty">読み込み中…</div>';
@@ -180,9 +183,9 @@ const updateBadge = () => {
   if (el) el.outerHTML = `<span id="sync-badge">${syncBadge()}</span>`;
 };
 
-/* ─── ロビー ─── */
-const renderLobby = () => {
-  root().innerHTML = `
+/* ─── 一覧: 進行中ラウンド一覧(独立タブ) ─── */
+const renderList = () => {
+  listRoot().innerHTML = `
     ${externalNotice()}
     ${MY_NAME ? '' : LiffAuth.nicknameCard()}
     <div class="card">
@@ -194,20 +197,22 @@ const renderLobby = () => {
           <div class="sum">${r.players.map((p) => `${esc(p.name)} ${p.finished ? `${p.gross}(終)` : `H${p.currentHole}`}`).join(' ／ ')}</div>
         </div>`).join('')}
     </div>
-    ${MY_NAME ? '<button class="btn-primary" onclick="view = \'create\'; render()">＋ 新しいラウンド</button>' : '<div class="hint" style="text-align:center">ニックネームを設定するとラウンドを作成・参加できます。</div>'}
+    ${MY_NAME ? '<button class="btn-primary" onclick="newRound()">＋ 新しいラウンド</button>' : '<div class="hint" style="text-align:center">ニックネームを設定するとラウンドを作成・参加できます。</div>'}
     <div class="hint" style="text-align:center">ラウンドの作成・参加は電波のある所で済ませてください。<br>その後の入力は圏外でも端末に保存され、電波が戻ると自動で送信されます。</div>
     ${!online ? `<div class="offline-note" style="text-align:center">現在オフラインです。一覧は最後に取得した内容です(${ago(lastFetchAt)})。</div>` : ''}
     ${MY_NAME ? LiffAuth.nicknameCard() : ''}
   `;
+  LiffAuth.bindNickname();
 };
 
+const newRound = () => { view = 'create'; render(); showTab('game'); };
 const goHome = () => {
   round = null;
   local = null;
-  view = 'lobby';
+  view = 'create';
   setRoundHash(null);
   render();
-  loadActive();
+  showTab('list');
 };
 const setRoundHash = (id) => {
   try { history.replaceState(null, '', id ? `#round=${id}` : location.pathname + location.search); } catch (_) {}
@@ -273,7 +278,6 @@ const openRound = async (id) => {
       return;
     }
     toast(err.message);
-    if (view === 'loading') view = 'lobby';
     loadActive();
   }
 };
@@ -285,6 +289,7 @@ const showRound = (r) => {
   view = r.status === 'finished' ? 'finished' : 'round';
   setRoundHash(r.id);
   render();
+  showTab('game');
   sync();
 };
 // この端末を本人の記録端末にする(サーバ側のログを取り込んでから続きの seq を振る)
@@ -587,22 +592,20 @@ const rematch = async () => {
 };
 
 /* ─── サーバとの同期(定期) ─── */
+// 進行中ラウンド一覧を取得して「一覧」タブに反映する。オフライン等で取得に
+// 失敗した場合は、直前に取得した一覧をそのまま出す(renderList 内の
+// offline-note で案内する)。
 const loadActive = async () => {
   try {
     const { rounds } = await api('/rounds/active');
-    const changed = JSON.stringify(rounds) !== JSON.stringify(activeRounds);
     activeRounds = rounds || [];
-    if (view === 'loading') { view = 'lobby'; render(); }
-    else if (view === 'lobby' && changed) renderLobby();
-  } catch (err) {
-    if (view === 'loading') { view = 'lobby'; render(); }
-    else if (view === 'lobby') renderLobby();
-  }
+  } catch (err) { /* stale activeRounds のまま表示する */ }
+  renderList();
 };
 const tick = () => {
   if (document.visibilityState !== 'visible' || busy) return;
   if (view === 'round' || view === 'finished') { if (pending().length) sync(); else refreshRound(); }
-  else if (view === 'lobby') loadActive();
+  if (isTabActive('list')) loadActive();
 };
 setInterval(tick, 5000);
 document.addEventListener('visibilitychange', tick);
@@ -701,16 +704,18 @@ if ('serviceWorker' in navigator) {
     MY_NAME = String(m.name || '').trim();
     if (off) online = false;
   } catch (err) {
-    root().innerHTML = `<div class="empty">ログインできませんでした<br>${esc(err.message)}<br><span style="font-size:12px">電波のある所で開き直してください</span></div>`;
+    listRoot().innerHTML = `<div class="empty">ログインできませんでした<br>${esc(err.message)}<br><span style="font-size:12px">電波のある所で開き直してください</span></div>`;
     return;
   }
+  render();
   const hashRound = (location.hash.match(/^#round=(\d+)$/) || [])[1];
   if (hashRound) {
-    openRound(Number(hashRound)).then(loadActive);
+    openRound(Number(hashRound));
+    loadActive();
   } else {
     // オフラインで開いた場合は、この端末で記録中のラウンドがあればそれを開く
     loadActive().then(() => {
-      if (view === 'lobby' && !online) {
+      if (!online) {
         let key = null;
         try { key = Object.keys(localStorage).find((k) => k.startsWith('golf.round.')); } catch (_) {}
         if (key) openRound(Number(key.replace('golf.round.', '')));

@@ -34,12 +34,15 @@ const showTab = (name) => {
   document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
   document.getElementById(`tabbtn-${name}`).classList.add('active');
+  if (name === 'list') loadActive();
   if (name === 'history') loadHistory();
   if (name === 'stats') loadStats();
 };
+const isTabActive = (name) => document.getElementById(`tab-${name}`).classList.contains('active');
 
 /* ─── 状態 ─── */
-let view = 'loading';   // lobby | setup1 | setup2 | playing | finished
+// 「一覧」は独立したタブ(list-root)なので view には含めない。
+let view = 'setup1';    // setup1 | setup2 | playing | finished
 let game = null;        // 表示中のゲーム(サーバから返る計算済み状態)
 let activeGames = [];   // 進行中ゲーム一覧(複数同時進行可)
 let busy = false;
@@ -87,10 +90,10 @@ window.onNicknameChanged = (me) => {
 };
 
 const root = () => document.getElementById('game-root');
+const listRoot = () => document.getElementById('list-root');
 
 const render = () => {
-  if (view === 'lobby') renderLobby();
-  else if (view === 'setup1') renderSetup1();
+  if (view === 'setup1') renderSetup1();
   else if (view === 'setup2') renderSetup2();
   else if (view === 'playing') renderPlaying();
   else if (view === 'finished') renderFinished();
@@ -103,9 +106,9 @@ const gameLabel = (g) => g.title || g.teams.map((t) => t.name).join(' vs ');
 // ニックネーム未設定のときだけ入力欄を出す(設定済みならロビーの下部に小さく)
 const nickBlock = () => (myName ? '' : LiffAuth.nicknameCard());
 
-/* ─── ロビー: 進行中ゲーム一覧 ─── */
-const renderLobby = () => {
-  root().innerHTML = `
+/* ─── 一覧: 進行中ゲーム一覧(独立タブ) ─── */
+const renderList = () => {
+  listRoot().innerHTML = `
     ${nickBlock()}
     <div class="card">
       <div class="card-title">進行中のゲーム(${activeGames.length})</div>
@@ -124,15 +127,16 @@ const renderLobby = () => {
     <div class="hint" style="text-align:center">複数のゲーム(コート)を同時に進められます。</div>
     ${myName ? LiffAuth.nicknameCard() : ''}
   `;
+  LiffAuth.bindNickname();
 };
 
-const newGame = () => { view = 'setup1'; render(); };
+const newGame = () => { view = 'setup1'; render(); showTab('game'); };
 const goHome = () => {
   game = null;
-  view = 'lobby';
+  view = 'setup1';
   setGameHash(null);
   render();
-  loadActive();
+  showTab('list');
 };
 // URL の #game=ID で特定のゲームを直接開ける(他の端末とリンク共有用)
 const setGameHash = (id) => {
@@ -146,9 +150,9 @@ const openGame = async (id) => {
     view = g.status === 'finished' ? 'finished' : 'playing';
     setGameHash(g.id);
     render();
+    showTab('game');
   } catch (err) {
     toast(err.message);
-    if (view === 'loading') { view = 'lobby'; }
     loadActive();
   }
 };
@@ -553,20 +557,14 @@ const finishToSetup = () => {
 };
 
 /* ─── サーバとの同期 ─── */
-// 進行中ゲーム一覧を取得。初回は一覧の有無で表示先を決める
+// 進行中ゲーム一覧を取得して「一覧」タブに反映する。
 const loadActive = async () => {
   try {
     const { games } = await api('/games/active');
-    const changed = JSON.stringify(games) !== JSON.stringify(activeGames);
     activeGames = games || [];
-    if (view === 'loading') {
-      view = activeGames.length ? 'lobby' : 'setup1';
-      render();
-    } else if (view === 'lobby' && changed) {
-      renderLobby();
-    }
+    renderList();
   } catch (err) {
-    if (view === 'loading') { root().innerHTML = `<div class="empty">読み込みに失敗しました<br>${esc(err.message)}</div>`; }
+    listRoot().innerHTML = `<div class="empty">読み込みに失敗しました<br>${esc(err.message)}</div>`;
   }
 };
 
@@ -596,12 +594,12 @@ const loadPlayers = async () => {
 setInterval(() => {
   if (document.visibilityState !== 'visible' || busy) return;
   if (view === 'playing') refreshGame();
-  else if (view === 'lobby') loadActive();
+  if (isTabActive('list')) loadActive();
 }, 5000);
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState !== 'visible' || busy) return;
   if (view === 'playing') refreshGame();
-  else if (view === 'lobby') loadActive();
+  if (isTabActive('list')) loadActive();
 });
 
 /* ─── 履歴 ─── */
@@ -751,14 +749,16 @@ const loadStats = async () => {
     const { me } = await LiffAuth.init();
     myName = String(me.name || '').trim() || null;
   } catch (err) {
-    root().innerHTML = `<div class="empty">ログインできませんでした<br>${esc(err.message)}</div>`;
+    listRoot().innerHTML = `<div class="empty">ログインできませんでした<br>${esc(err.message)}</div>`;
     return;
   }
   restoreSetup();
   autoAddSelf();
+  render();
   const hashGame = (location.hash.match(/^#game=(\d+)$/) || [])[1];
   if (hashGame) {
-    openGame(Number(hashGame)).then(() => loadActive()).then(loadPlayers);
+    openGame(Number(hashGame)).then(loadPlayers);
+    loadActive();
   } else {
     loadActive().then(loadPlayers);
   }

@@ -40,13 +40,16 @@ const showTab = (name) => {
   document.querySelectorAll('.tab-btn').forEach((b) => b.classList.remove('active'));
   document.getElementById(`tab-${name}`).classList.add('active');
   document.getElementById(`tabbtn-${name}`).classList.add('active');
+  if (name === 'list') loadActive();
   if (name === 'history') loadHistory();
   if (name === 'stats') loadStats();
 };
+const isTabActive = (name) => document.getElementById(`tab-${name}`).classList.contains('active');
 
 /* ─── 状態 ─── */
+// 「一覧」は独立したタブ(list-root)なので view には含めない。
 let myName = '';
-let view = 'loading';   // lobby | setup | playing | finished
+let view = 'setup';    // setup | playing | finished
 let board = null;       // 表示中のボード(サーバから返る計算済み状態)
 let activeBoards = [];
 let busy = false;
@@ -66,6 +69,7 @@ const restoreSetup = () => {
 window.onNicknameChanged = (me) => { myName = String(me.name || '').trim(); render(); };
 
 const root = () => document.getElementById('game-root');
+const listRoot = () => document.getElementById('list-root');
 const boardLabel = (b) => b.title || b.players.map((p) => p.name).join('・');
 const myIndex = (b) => (myName ? b.players.findIndex((p) => p.name === myName) : -1);
 const leaders = (b) => b.players.filter((p) => p.rank === 1);
@@ -74,17 +78,16 @@ const rankMark = (rank) => medal[rank - 1] || `${rank}.`;
 const nickBlock = () => (myName ? '' : LiffAuth.nicknameCard());
 
 const render = () => {
-  if (view === 'lobby') renderLobby();
-  else if (view === 'setup') renderSetup();
+  if (view === 'setup') renderSetup();
   else if (view === 'playing') renderPlaying();
   else if (view === 'finished') renderFinished();
   else root().innerHTML = '<div class="empty">読み込み中…</div>';
   LiffAuth.bindNickname();
 };
 
-/* ─── ロビー: 進行中ボード一覧 ─── */
-const renderLobby = () => {
-  root().innerHTML = `
+/* ─── 一覧: 進行中ボード一覧(独立タブ) ─── */
+const renderList = () => {
+  listRoot().innerHTML = `
     ${nickBlock()}
     <div class="card">
       <div class="card-title">進行中のボード(${activeBoards.length})</div>
@@ -100,20 +103,22 @@ const renderLobby = () => {
     <div class="hint" style="text-align:center">複数のボードを同時に進められます。</div>
     ${myName ? LiffAuth.nicknameCard() : ''}
   `;
+  LiffAuth.bindNickname();
 };
 
 const newBoard = () => {
   if (myName && !setup.names.includes(myName)) setup.names.unshift(myName);
   view = 'setup';
   render();
+  showTab('game');
 };
 const goHome = () => {
   board = null;
   selected = null;
-  view = 'lobby';
+  view = 'setup';
   setBoardHash(null);
   render();
-  loadActive();
+  showTab('list');
 };
 // URL の #board=ID で特定のボードを直接開ける(他の端末とリンク共有用)
 const setBoardHash = (id) => {
@@ -130,9 +135,9 @@ const openBoard = async (id) => {
   try {
     const { board: b } = await api(`/boards/${id}`);
     showBoard(b);
+    showTab('game');
   } catch (err) {
     toast(err.message);
-    if (view === 'loading') view = 'lobby';
     loadActive();
   }
 };
@@ -425,19 +430,14 @@ const renderFinished = () => {
 const rematch = () => createBoard({ title: board.title, players: board.players.map((p) => p.name) });
 
 /* ─── サーバとの同期 ─── */
+// 進行中ボード一覧を取得して「一覧」タブに反映する。
 const loadActive = async () => {
   try {
     const { boards } = await api('/boards/active');
-    const changed = JSON.stringify(boards) !== JSON.stringify(activeBoards);
     activeBoards = boards || [];
-    if (view === 'loading') {
-      if (activeBoards.length) { view = 'lobby'; render(); } else newBoard();
-    } else if (view === 'lobby' && changed) {
-      renderLobby();
-      LiffAuth.bindNickname();
-    }
+    renderList();
   } catch (err) {
-    if (view === 'loading') root().innerHTML = `<div class="empty">読み込みに失敗しました<br>${esc(err.message)}</div>`;
+    listRoot().innerHTML = `<div class="empty">読み込みに失敗しました<br>${esc(err.message)}</div>`;
   }
 };
 
@@ -467,7 +467,7 @@ const loadPlayers = async () => {
 const tick = () => {
   if (document.visibilityState !== 'visible' || busy) return;
   if (view === 'playing') refreshBoard();
-  else if (view === 'lobby') loadActive();
+  if (isTabActive('list')) loadActive();
 };
 setInterval(tick, 5000);
 document.addEventListener('visibilitychange', tick);
@@ -595,13 +595,15 @@ const loadStats = async () => {
     const { me } = await LiffAuth.init();
     myName = String(me.name || '').trim();
   } catch (err) {
-    root().innerHTML = `<div class="empty">ログインできませんでした<br>${esc(err.message)}</div>`;
+    listRoot().innerHTML = `<div class="empty">ログインできませんでした<br>${esc(err.message)}</div>`;
     return;
   }
   restoreSetup();
+  render();
   const hashBoard = (location.hash.match(/^#board=(\d+)$/) || [])[1];
   if (hashBoard) {
-    openBoard(Number(hashBoard)).then(loadActive).then(loadPlayers);
+    openBoard(Number(hashBoard)).then(loadPlayers);
+    loadActive();
   } else {
     loadActive().then(loadPlayers);
   }
