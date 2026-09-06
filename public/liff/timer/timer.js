@@ -95,7 +95,7 @@ const timerCardHtml = (t) => {
     const pieces = [];
     if (status === 'idle' || status === 'paused') pieces.push(`<button class="btn-sm btn-accent" onclick="startTimer(${t.id})">▶ ${status === 'paused' ? '再開' : '開始'}</button>`);
     if (status === 'running') pieces.push(`<button class="btn-sm btn-light" onclick="pauseTimer(${t.id})">⏸ 一時停止</button>`);
-    if (status === 'paused' || status === 'finished') pieces.push(`<button class="btn-sm btn-light" onclick="resetTimer(${t.id})">↺ リセット</button>`);
+    if (status === 'running' || status === 'paused' || status === 'finished') pieces.push(`<button class="btn-sm btn-light" onclick="resetTimer(${t.id})">↺ リセット</button>`);
     actions = pieces.join('') + actions;
   }
 
