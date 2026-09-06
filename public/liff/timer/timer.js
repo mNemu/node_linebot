@@ -28,7 +28,12 @@ const api = (path, options) => LiffAuth.api(API + path, options);
 let timers = [];
 let createOpen = false;
 let busy = false;
-const form = { name: '', kind: 'deadline', target: '', h: 0, m: 5, s: 0 };
+// 新規作成フォームの入力値。あえて "form" という名前は使わない:
+// フォーム関連要素(input等)は組み込みの `form` プロパティ(所属する
+// <form> 要素、無ければ null)を持ち、インライン on* 属性のスコープ内では
+// それが最優先で見つかってしまうため、`form.x = ...` は `null.x = ...` と
+// 評価されて静かに失敗する(このバグで実際に入力が効かなくなっていた)。
+const draft = { name: '', kind: 'deadline', target: '', h: 0, m: 5, s: 0 };
 
 const root = () => document.getElementById('root');
 
@@ -110,24 +115,24 @@ const createFormHtml = () => `
   <div class="card">
     <div class="card-title">新しいタイマー</div>
     <div class="input-row">
-      <input type="text" id="name-input" placeholder="名前(例: 会議開始まで)" maxlength="40" value="${esc(form.name)}" oninput="form.name = this.value">
+      <input type="text" id="name-input" placeholder="名前(例: 会議開始まで)" maxlength="40" value="${esc(draft.name)}" oninput="draft.name = this.value">
     </div>
     <div class="form-row">
       <div class="seg">
-        <button class="${form.kind === 'deadline' ? 'on' : ''}" onclick="setKind('deadline')">日時指定</button>
-        <button class="${form.kind === 'duration' ? 'on' : ''}" onclick="setKind('duration')">時間指定</button>
+        <button class="${draft.kind === 'deadline' ? 'on' : ''}" onclick="setKind('deadline')">日時指定</button>
+        <button class="${draft.kind === 'duration' ? 'on' : ''}" onclick="setKind('duration')">時間指定</button>
       </div>
     </div>
-    <div class="kind-fields ${form.kind === 'deadline' ? '' : 'hidden'}">
+    <div class="kind-fields ${draft.kind === 'deadline' ? '' : 'hidden'}">
       <label class="hint" style="margin:0 0 4px">目標の日時</label>
-      <input type="datetime-local" id="target-input" value="${esc(form.target)}" oninput="form.target = this.value" style="width:100%; padding:11px 13px; border:1.5px solid #e0e0e0; border-radius:9px; font-size:16px;">
+      <input type="datetime-local" id="target-input" value="${esc(draft.target)}" oninput="draft.target = this.value" style="width:100%; padding:11px 13px; border:1.5px solid #e0e0e0; border-radius:9px; font-size:16px;">
     </div>
-    <div class="kind-fields ${form.kind === 'duration' ? '' : 'hidden'}">
+    <div class="kind-fields ${draft.kind === 'duration' ? '' : 'hidden'}">
       <label class="hint" style="margin:0 0 4px">カウントダウンする時間</label>
       <div class="dur-inputs">
-        <input type="number" min="0" max="23" id="h-input" value="${form.h}" oninput="form.h = this.value"><span>時間</span>
-        <input type="number" min="0" max="59" id="m-input" value="${form.m}" oninput="form.m = this.value"><span>分</span>
-        <input type="number" min="0" max="59" id="s-input" value="${form.s}" oninput="form.s = this.value"><span>秒</span>
+        <input type="number" min="0" max="23" id="h-input" value="${draft.h}" oninput="draft.h = this.value"><span>時間</span>
+        <input type="number" min="0" max="59" id="m-input" value="${draft.m}" oninput="draft.m = this.value"><span>分</span>
+        <input type="number" min="0" max="59" id="s-input" value="${draft.s}" oninput="draft.s = this.value"><span>秒</span>
       </div>
     </div>
     <button class="btn-primary" onclick="submitCreate()" ${busy ? 'disabled' : ''}>作成</button>
@@ -147,22 +152,22 @@ const render = () => {
 };
 
 /* ─── フォーム操作 ─── */
-const setKind = (kind) => { form.kind = kind; render(); };
+const setKind = (kind) => { draft.kind = kind; render(); };
 const toggleCreate = () => { createOpen = !createOpen; render(); };
 
 const submitCreate = async () => {
   if (busy) return;
-  const name = form.name.trim();
+  const name = draft.name.trim();
   if (!name) { toast('名前を入力してください'); return; }
   let payload;
-  if (form.kind === 'deadline') {
-    if (!form.target) { toast('目標の日時を入力してください'); return; }
-    const targetAt = new Date(form.target).toISOString();
+  if (draft.kind === 'deadline') {
+    if (!draft.target) { toast('目標の日時を入力してください'); return; }
+    const targetAt = new Date(draft.target).toISOString();
     payload = { name, kind: 'deadline', targetAt };
   } else {
-    const h = Number(form.h) || 0;
-    const m = Number(form.m) || 0;
-    const s = Number(form.s) || 0;
+    const h = Number(draft.h) || 0;
+    const m = Number(draft.m) || 0;
+    const s = Number(draft.s) || 0;
     const durationMs = (h * 3600 + m * 60 + s) * 1000;
     if (durationMs <= 0) { toast('時間を指定してください'); return; }
     payload = { name, kind: 'duration', durationMs };
@@ -170,7 +175,7 @@ const submitCreate = async () => {
   busy = true;
   try {
     await api('/timers', { method: 'POST', body: JSON.stringify(payload) });
-    form.name = ''; form.target = ''; form.h = 0; form.m = 5; form.s = 0;
+    draft.name = ''; draft.target = ''; draft.h = 0; draft.m = 5; draft.s = 0;
     createOpen = false;
     toast('タイマーを作成しました');
     await loadTimers();
