@@ -9,6 +9,7 @@ import { startDailyScheduleCron } from './cron/dailySchedule.js';
 import { scoreboardApi } from './scoreboard/api.js';
 import { molkkyApi } from './molkky/api.js';
 import { golfApi } from './golf/api.js';
+import { timerApi } from './timer/api.js';
 import { meApi } from './liff/me.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -33,6 +34,7 @@ app.use('/api/me', meApi);
 app.use('/api/molkky', molkkyApi);
 app.use('/api/golf', golfApi);
 app.use('/api/scoreboard', scoreboardApi);
+app.use('/api/timer', timerApi);
 app.use(express.static(path.join(__dirname, '..', 'public')));
 
 app.post(

@@ -21,12 +21,13 @@ async function api(method, path, { headers, body } = {}) {
 
 // Matches assets/richmenu.png (source: assets/richmenu.svg): a 2500x1124,
 // 3x2 grid of buttons.
-//   row 1: サイコロ / ダイエット (LIFF input forms, public/liff/index.html), メニュー (help)
+//   row 1: サイコロ / ダイエット (LIFF input forms, public/liff/index.html), タイマー (LIFF page)
 //   row 2: モルック / ゴルフ / 得点ボード (LIFF score pages, LINE login)
 // No more fixed dice-roll shortcut buttons (2D6/1D100/1D20) - サイコロ opens
-// the input form instead. The score pages are sub-paths of the LIFF
+// the input form instead. The score/timer pages are sub-paths of the LIFF
 // endpoint, opened as https://liff.line.me/<liffId>/<page>/ so LIFF login
-// is available.
+// is available. The old "メニュー" (@BOT help) button was retired to make
+// room for タイマー - help is still reachable by typing "@BOT" in chat.
 function layout() {
   if (!config.liffId) {
     throw new Error('LIFF_ID is not set - run `node scripts/liff.js create <url>` first, then set it in .env.');
@@ -48,7 +49,7 @@ function layout() {
     areas: [
       cell(0, 0, { type: 'uri', uri: liffUrl('dice') }),
       cell(1, 0, { type: 'uri', uri: liffUrl('diet') }),
-      cell(2, 0, { type: 'message', text: '@BOT' }),
+      cell(2, 0, { type: 'uri', uri: liffPage('timer') }),
       cell(0, 1, { type: 'uri', uri: liffPage('molkky') }),
       cell(1, 1, { type: 'uri', uri: liffPage('golf') }),
       cell(2, 1, { type: 'uri', uri: liffPage('scoreboard') }),

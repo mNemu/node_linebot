@@ -14,8 +14,9 @@ LINEから叩けるコマンドは意図的に**ダイス**と**ダイエット�
   (`PUBLIC_BASE_URL` 未設定時はタップ不可のバッジとして表示される)
 
 このほか LIFF(`https://<host>/liff/`) に、ダイスとダイエット試算の入力フォーム(`/liff/`)と、
-LINEログインで使う得点記録ページ **モルック**(`/liff/molkky/`)・**ゴルフ**(`/liff/golf/`)・**汎用の得点ボード**(`/liff/scoreboard/`)があり、
-いずれもリッチメニューから開ける(下記「得点記録ページ」参照)。
+LINEログインで使う得点記録ページ **モルック**(`/liff/molkky/`)・**ゴルフ**(`/liff/golf/`)・**汎用の得点ボード**(`/liff/scoreboard/`)、
+**現在時刻表示 + 共有タイマー**(`/liff/timer/`)があり、いずれもリッチメニューから開ける
+(下記「得点記録ページ」「現在時刻表示 + カウントダウンタイマー」参照)。
 
 メンションなしのメッセージ・スタンプ・画像/動画添付も含め、すべてのメッセージは会話ごとにSQLiteへログされ、
 `recipient` 設定(サーバー側の `node scripts/cfg.js` で設定)があれば10分デバウンスでダイジェストメールとして転送される
@@ -36,6 +37,7 @@ LINEログインで使う得点記録ページ **モルック**(`/liff/molkky/`)
 | `src/molkky/` + `public/liff/molkky/` | モルック得点記録(YURU の molkky の移植)。API は `/api/molkky` |
 | `src/golf/` + `public/liff/golf/` | ゴルフ得点記録(YURU の golf の移植、招待URLの参加者限定は無し)。API は `/api/golf`。`sw.js` は圏外用の Service Worker |
 | `src/scoreboard/` + `public/liff/scoreboard/` | 汎用の得点ボード(ゲームを問わない加点/減点)。API は `/api/scoreboard` |
+| `src/timer/` + `public/liff/timer/` | 現在時刻表示 + 共有カウントダウンタイマー。API は `/api/timer` |
 | `src/google/calendar.js` | Calendar API v3。`DAILY_SCHEDULE_TARGET` の予定通知バッチが使用 |
 | `src/google/mail.js` | nodemailer(SMTP)経由でのダイジェストメール送信。画像メッセージは添付ファイルとして転送 |
 | `src/lib/db.js` | 会話ごとの設定(cfg)とログ(log)を保存するSQLite(`node:sqlite`)ラッパー |
@@ -68,7 +70,7 @@ LINEログインで使う得点記録ページ **モルック**(`/liff/molkky/`)
    得点記録ページは `https://liff.line.me/<liffId>/molkky/` のようにそのサブパスとして開く)
 2. 作成された `liffId` を `.env` の `LIFF_ID` に設定する
 3. Botを再起動する
-4. `node scripts/richmenu.js create-and-set assets/richmenu.png` でリッチメニュー(3×2: サイコロ/ダイエット試算/メニュー、
+4. `node scripts/richmenu.js create-and-set assets/richmenu.png` でリッチメニュー(3×2: サイコロ/ダイエット試算/タイマー、
    モルック/ゴルフ/得点ボード)を反映する
 
 既に作成済みのLIFFアプリには、得点記録ページのLINEログインに必要な `profile` スコープを
@@ -134,10 +136,28 @@ LIFF のサブパスとして開く(`https://liff.line.me/<liffId>/molkky/` 等�
 - **複数端末で共有**: いずれも状態はサーバー(SQLite)が持ち、5秒ごとに他端末の更新を反映する。
   `#game=<id>` / `#round=<id>` / `#board=<id>` 付きのURLを送れば同じものを開ける。
 
-JSON API は `/api/me`(ニックネーム)、`/api/molkky`、`/api/golf`、`/api/scoreboard` 配下で、
+JSON API は `/api/me`(ニックネーム)、`/api/molkky`、`/api/golf`、`/api/scoreboard`、`/api/timer` 配下で、
 すべて `Authorization: Bearer <LIFFアクセストークン>` が必要(LINE の verify / profile API で検証し、10分キャッシュ)。
 開発時は `.env` に `LIFF_DEV_AUTH=1` を入れると `Bearer dev:<userId>` を LINE に問い合わせず受け付ける(本番では絶対に有効にしない)。
-データは `data/linebot.sqlite` の `liff_nickname` / `molkky_*` / `golf_*` / `board*` テーブルに入る。
+データは `data/linebot.sqlite` の `liff_nickname` / `molkky_*` / `golf_*` / `board*` / `timer` テーブルに入る。
+
+## 現在時刻表示 + カウントダウンタイマー
+
+`/liff/timer/` は、現在時刻のライブ表示と、ログイン済みなら誰でも見える共有のカウントダウンタイマー一覧を
+1画面にまとめたページ(リッチメニューの「タイマー」ボタンから開く)。
+
+- **現在時刻表示**: ページ上部に常時表示。クライアント側で1秒ごとに再計算するだけで、サーバーとの通信は発生しない。
+- **タイマーは名前を付けて複数作成でき、全員で共有**する(得点ボードと同じ「全件公開の一覧」方式。作成者以外も
+  閲覧・開始/一時停止/リセット/削除ができる)。種類は2つ:
+  - **日時指定(`deadline`)**: 指定した日時までの残り時間を表示するだけで、開始/一時停止の概念はない
+    (目標日時が来れば自動的に「経過」表示に切り替わる)。
+  - **時間指定(`duration`)**: 「10分」のように長さを指定して開始するストップウォッチ式のカウントダウンで、
+    一時停止・再開・リセットができる。実行中かどうかと再開時の起点(`started_at`)はサーバー(SQLite)が保持しており、
+    複数端末で同じタイマーを開いても同じ残り時間が(多少のずれはあれど)見える。
+- 一覧は5秒ごとのポーリングで他ユーザーの操作を反映し、残り時間の表示自体は毎秒ローカルで再計算する
+  (サーバーへの問い合わせを1秒ごとには行わない)。
+- JSON API(`/api/timer`)はモルック/ゴルフ/得点ボードと同じ形で、LIFFログイン(`Authorization: Bearer`)が必須。
+  データは `data/linebot.sqlite` の `timer` テーブルに永続化される。
 
 ## 運用コマンド(サーバー上のシェルから)
 

@@ -30,12 +30,14 @@
   <text x="1250" y="408" font-size="50" font-weight="bold" fill="#ffffff" text-anchor="middle">ダイエット試算</text>
   <text x="1250" y="462" font-size="30" fill="#ccfbf1" text-anchor="middle">タップで入力</text>
 
-  <!-- (2,0) help / menu -->
+  <!-- (2,0) timer: clock face -->
   <g transform="translate(2083,200)">
     <circle cx="0" cy="0" r="95" fill="#ffffff"/>
-    <text x="0" y="36" font-size="118" font-weight="bold" fill="#334155" text-anchor="middle">?</text>
+    <circle cx="0" cy="0" r="70" fill="none" stroke="#334155" stroke-width="10"/>
+    <line x1="0" y1="0" x2="0" y2="-42" stroke="#334155" stroke-width="10" stroke-linecap="round"/>
+    <line x1="0" y1="0" x2="30" y2="14" stroke="#334155" stroke-width="10" stroke-linecap="round"/>
   </g>
-  <text x="2083" y="408" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">メニュー</text>
+  <text x="2083" y="408" font-size="54" font-weight="bold" fill="#ffffff" text-anchor="middle">タイマー</text>
 
   <!-- (0,1) molkky: pins + throwing stick -->
   <g transform="translate(416,762)">

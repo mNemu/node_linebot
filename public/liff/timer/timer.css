@@ -1,0 +1,26 @@
+/* タイマーページ固有スタイル(共通は /liff/score.css)。 */
+.tabs-title { display: flex; align-items: center; padding: 0 14px; color: #fff; font-size: 15px; font-weight: 700; }
+
+.clock-card {
+  background: var(--accent); color: #fff; border-radius: 14px; padding: 18px 16px; margin-bottom: 12px;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.12); text-align: center;
+}
+.clock-card .clock-time { font-size: 42px; font-weight: 800; line-height: 1; font-variant-numeric: tabular-nums; letter-spacing: .02em; }
+.clock-card .clock-date { font-size: 13px; opacity: .9; margin-top: 6px; }
+
+.timer-card { background: #fff; border-radius: 14px; padding: 14px 16px; margin-bottom: 10px; box-shadow: 0 1px 4px rgba(0,0,0,0.08); }
+.timer-card .t-top { display: flex; align-items: center; gap: 8px; }
+.timer-card .t-name { flex: 1; min-width: 0; font-size: 15px; font-weight: 700; word-break: break-all; }
+.timer-card .t-del { background: none; border: none; color: var(--danger); font-size: 16px; cursor: pointer; padding: 4px; }
+.timer-card .t-remain { font-size: 34px; font-weight: 800; font-variant-numeric: tabular-nums; text-align: center; margin: 10px 0 4px; }
+.timer-card .t-remain.over { color: var(--danger); }
+.timer-card .t-remain.finished { color: var(--amber); }
+.timer-card .t-sub { font-size: 12px; color: #999; text-align: center; }
+.timer-card .t-actions { display: flex; gap: 8px; margin-top: 10px; }
+.timer-card .t-actions button { flex: 1; }
+
+.kind-fields { margin-top: 10px; }
+.kind-fields.hidden { display: none; }
+.dur-inputs { display: flex; gap: 8px; align-items: center; }
+.dur-inputs input { width: 100%; text-align: center; }
+.dur-inputs span { color: #999; font-size: 13px; }
