@@ -16,11 +16,13 @@
 .timer-card .t-remain.over { color: var(--danger); }
 .timer-card .t-remain.finished { color: var(--amber); }
 .timer-card .t-sub { font-size: 12px; color: #999; text-align: center; }
-.timer-card .t-actions { display: flex; gap: 8px; margin-top: 10px; }
-.timer-card .t-actions button { flex: 1; }
+.t-actions { display: flex; gap: 8px; margin-top: 10px; }
+.t-actions button { flex: 1; }
 
 .kind-fields { margin-top: 10px; }
 .kind-fields.hidden { display: none; }
 .dur-inputs { display: flex; gap: 8px; align-items: center; }
 .dur-inputs input { width: 100%; text-align: center; }
 .dur-inputs span { color: #999; font-size: 13px; }
+
+.chip.on { background: var(--accent); color: #fff; }

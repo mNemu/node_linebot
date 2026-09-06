@@ -1,7 +1,14 @@
-/* 現在時刻表示 + 共有カウントダウンタイマー。サーバ側は src/timer/api.js。
-   ログインは LIFF(/liff/liffauth.js)。タイマーはログイン済みなら誰でも
-   閲覧・作成・操作できる、全員共有の一覧(得点ボードの得点/ボードと同じ形)。
-   種類は2つ:
+/* 現在時刻表示 + カウントダウンタイマー。サーバ側は src/timer/api.js。
+   ログインは LIFF(/liff/liffauth.js)。
+
+   タイマーは「セット」という名前付きの入れ物の中に入る。セットは作った本人
+   にはいつでも見え、本人が「共有する」に切り替えたときだけ他の人にも見える
+   ようになる(共有していないセットは自分だけのもの)。一度見えているセット
+   の中では、誰でもタイマーの作成・開始/一時停止/リセット・削除ができる
+   (見えるかどうかだけを共有設定で絞っている)。ユーザーは複数のセットを
+   持てて、画面上部の「セット」チップで切り替える。
+
+   タイマーの種類は2つ:
      - deadline: 目標日時までの残り時間を都度計算するだけ(開始/一時停止なし)
      - duration: 決めた時間からのストップウォッチ式カウントダウン(開始/一時停止/リセット可)
    duration が running のときはサーバから返る remainingMs のスナップショットと
@@ -10,6 +17,7 @@
 'use strict';
 
 const API = '/api/timer';
+const CURRENT_SET_KEY = 'timer.currentSetId';
 
 const esc = (s) => String(s ?? '').replace(/[&<>"']/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
 
@@ -25,8 +33,11 @@ const toast = (msg, ms = 2200) => {
 const api = (path, options) => LiffAuth.api(API + path, options);
 
 /* ─── 状態 ─── */
+let sets = [];
+let currentSetId = null;
 let timers = [];
 let createOpen = false;
+let setCreateOpen = false;
 let busy = false;
 // 新規作成フォームの入力値。あえて "form" という名前は使わない:
 // フォーム関連要素(input等)は組み込みの `form` プロパティ(所属する
@@ -34,8 +45,12 @@ let busy = false;
 // それが最優先で見つかってしまうため、`form.x = ...` は `null.x = ...` と
 // 評価されて静かに失敗する(このバグで実際に入力が効かなくなっていた)。
 const draft = { name: '', kind: 'deadline', target: '', h: 0, m: 5, s: 0 };
+const setDraft = { name: '', shared: false };
 
 const root = () => document.getElementById('root');
+const currentSet = () => sets.find((s) => s.id === currentSetId) || null;
+const saveCurrentSetId = (id) => { try { localStorage.setItem(CURRENT_SET_KEY, String(id)); } catch (_) {} };
+const loadSavedSetId = () => { try { const v = localStorage.getItem(CURRENT_SET_KEY); return v ? Number(v) : null; } catch (_) { return null; } };
 
 const pad2 = (n) => String(n).padStart(2, '0');
 const fmtDuration = (ms) => {
@@ -78,6 +93,36 @@ const clockCardHtml = () => {
     <div class="clock-card">
       <div class="clock-time" id="clock-time">${pad2(now.getHours())}:${pad2(now.getMinutes())}:${pad2(now.getSeconds())}</div>
       <div class="clock-date" id="clock-date">${now.getFullYear()}/${pad2(now.getMonth() + 1)}/${pad2(now.getDate())}(${week})</div>
+    </div>`;
+};
+
+const setCreateFormHtml = () => `
+  <div class="input-row" style="margin-top:10px">
+    <input type="text" id="set-name-input" placeholder="セット名(例: 家族用)" maxlength="40" value="${esc(setDraft.name)}" oninput="setDraft.name = this.value">
+  </div>
+  <label class="hint" style="display:flex; align-items:center; gap:6px; margin-top:8px">
+    <input type="checkbox" id="set-shared-input" ${setDraft.shared ? 'checked' : ''} onchange="setDraft.shared = this.checked"> 他の人にも共有する
+  </label>
+  <div class="t-actions" style="margin-top:10px">
+    <button class="btn-sm btn-accent" onclick="submitCreateSet()" ${busy ? 'disabled' : ''}>作成</button>
+    <button class="btn-sm btn-light" onclick="toggleSetCreate()">キャンセル</button>
+  </div>`;
+
+const setSwitcherHtml = () => {
+  const cs = currentSet();
+  return `
+    <div class="card">
+      <div class="card-title">セット</div>
+      <div class="chips">
+        ${sets.map((s) => `<button class="chip ${s.id === currentSetId ? 'on' : ''}" onclick="switchSet(${s.id})">${esc(s.name)}${s.isMine ? '' : ' 👥'}${s.shared ? ' 🌐' : ''}</button>`).join('')}
+        <button class="chip" onclick="toggleSetCreate()">＋ 新規</button>
+      </div>
+      ${setCreateOpen ? setCreateFormHtml() : ''}
+      ${cs && cs.isMine ? `
+        <div class="t-actions" style="margin-top:10px">
+          <button class="btn-sm btn-light" onclick="toggleShare(${cs.id}, ${cs.shared})">${cs.shared ? '🔒 共有をやめる' : '🌐 他の人にも共有する'}</button>
+          <button class="btn-sm btn-danger" onclick="deleteCurrentSet()">🗑 このセットを削除</button>
+        </div>` : cs ? '<div class="hint">他の人が共有しているセットです。タイマーの操作はできますが、共有設定の変更・削除は作成者のみできます。</div>' : ''}
     </div>`;
 };
 
@@ -140,23 +185,88 @@ const createFormHtml = () => `
   </div>`;
 
 const render = () => {
+  const cs = currentSet();
   root().innerHTML = `
     ${clockCardHtml()}
+    ${setSwitcherHtml()}
     <div class="card">
-      <div class="card-title">共有タイマー(${timers.length})</div>
+      <div class="card-title">${cs ? `${esc(cs.name)}の` : ''}タイマー(${timers.length})</div>
       ${timers.length === 0 ? '<div class="empty">まだタイマーがありません</div>' : ''}
     </div>
     ${timers.map(timerCardHtml).join('')}
-    ${createOpen ? createFormHtml() : '<button class="btn-primary" onclick="toggleCreate()">＋ 新しいタイマー</button>'}
+    ${currentSetId ? (createOpen ? createFormHtml() : '<button class="btn-primary" onclick="toggleCreate()">＋ 新しいタイマー</button>') : ''}
   `;
 };
 
-/* ─── フォーム操作 ─── */
+/* ─── セット操作 ─── */
+const switchSet = (id) => {
+  if (id === currentSetId) return;
+  currentSetId = id;
+  saveCurrentSetId(id);
+  setCreateOpen = false;
+  timers = [];
+  render();
+  loadTimers();
+};
+const toggleSetCreate = () => { setCreateOpen = !setCreateOpen; render(); };
+
+const submitCreateSet = async () => {
+  if (busy) return;
+  const name = setDraft.name.trim();
+  if (!name) { toast('セット名を入力してください'); return; }
+  busy = true;
+  try {
+    const { set: s } = await api('/sets', { method: 'POST', body: JSON.stringify({ name, shared: setDraft.shared }) });
+    setDraft.name = ''; setDraft.shared = false;
+    setCreateOpen = false;
+    currentSetId = s.id;
+    saveCurrentSetId(s.id);
+    toast('セットを作成しました');
+    await loadSets();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    busy = false;
+  }
+};
+
+const toggleShare = async (id, shared) => {
+  if (busy) return;
+  busy = true;
+  try {
+    await api(`/sets/${id}`, { method: 'PATCH', body: JSON.stringify({ shared: !shared }) });
+    toast(shared ? '共有をやめました' : '共有しました');
+    await loadSets();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    busy = false;
+  }
+};
+
+const deleteCurrentSet = async () => {
+  if (busy || !currentSetId) return;
+  const s = currentSet();
+  if (!confirm(`「${s ? s.name : 'このセット'}」を削除しますか?\n中のタイマーもすべて削除されます。`)) return;
+  busy = true;
+  try {
+    await api(`/sets/${currentSetId}`, { method: 'DELETE' });
+    toast('削除しました');
+    currentSetId = null;
+    await loadSets();
+  } catch (err) {
+    toast(err.message);
+  } finally {
+    busy = false;
+  }
+};
+
+/* ─── タイマー作成フォーム操作 ─── */
 const setKind = (kind) => { draft.kind = kind; render(); };
 const toggleCreate = () => { createOpen = !createOpen; render(); };
 
 const submitCreate = async () => {
-  if (busy) return;
+  if (busy || !currentSetId) return;
   const name = draft.name.trim();
   if (!name) { toast('名前を入力してください'); return; }
   let payload;
@@ -174,7 +284,7 @@ const submitCreate = async () => {
   }
   busy = true;
   try {
-    await api('/timers', { method: 'POST', body: JSON.stringify(payload) });
+    await api(`/sets/${currentSetId}/timers`, { method: 'POST', body: JSON.stringify(payload) });
     draft.name = ''; draft.target = ''; draft.h = 0; draft.m = 5; draft.s = 0;
     createOpen = false;
     toast('タイマーを作成しました');
@@ -186,7 +296,7 @@ const submitCreate = async () => {
   }
 };
 
-/* ─── 操作 ─── */
+/* ─── タイマー操作 ─── */
 const withBusy = async (fn) => {
   if (busy) return;
   busy = true;
@@ -204,9 +314,27 @@ const deleteTimer = (id) => withBusy(async () => {
 });
 
 /* ─── サーバとの同期 ─── */
-const loadTimers = async () => {
+const loadSets = async () => {
   try {
-    const { timers: list } = await api('/timers');
+    const { sets: list } = await api('/sets');
+    sets = list || [];
+    if (!sets.some((s) => s.id === currentSetId)) {
+      const saved = loadSavedSetId();
+      const fallback = sets.find((s) => s.id === saved) || sets.find((s) => s.isMine) || sets[0] || null;
+      currentSetId = fallback ? fallback.id : null;
+      if (currentSetId) saveCurrentSetId(currentSetId);
+    }
+    render();
+    await loadTimers();
+  } catch (err) {
+    root().innerHTML = `<div class="empty">読み込みに失敗しました<br>${esc(err.message)}</div>`;
+  }
+};
+
+const loadTimers = async () => {
+  if (!currentSetId) { timers = []; render(); return; }
+  try {
+    const { timers: list } = await api(`/sets/${currentSetId}/timers`);
     const fetchedAt = Date.now();
     timers = (list || []).map((t) => ({ ...t, _fetchedAt: fetchedAt }));
     render();
@@ -233,11 +361,11 @@ const tickDisplay = () => {
 setInterval(tickDisplay, 1000);
 
 const tickPoll = () => {
-  // 作成フォームを開いている間は再描画しない: 全体再描画で <input> が
-  // 差し替わると、日本語IMEの変換中の入力が消えて「名前が入力できない」
+  // タイマー/セットの作成フォームを開いている間は再描画しない: 全体再描画で
+  // <input> が差し替わると、日本語IMEの変換中の入力が消えて「入力できない」
   // ように見えてしまうため。
-  if (document.visibilityState !== 'visible' || busy || createOpen) return;
-  loadTimers();
+  if (document.visibilityState !== 'visible' || busy || createOpen || setCreateOpen) return;
+  loadSets();
 };
 setInterval(tickPoll, 5000);
 document.addEventListener('visibilitychange', tickPoll);
@@ -250,5 +378,5 @@ document.addEventListener('visibilitychange', tickPoll);
     root().innerHTML = `<div class="empty">ログインできませんでした<br>${esc(err.message)}</div>`;
     return;
   }
-  await loadTimers();
+  await loadSets();
 })();

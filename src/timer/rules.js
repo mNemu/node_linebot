@@ -5,6 +5,7 @@ import { RuleError } from '../liff/errors.js';
 export { RuleError };
 
 export const MAX_NAME_LENGTH = 40;
+export const MAX_SET_NAME_LENGTH = 40;
 export const KINDS = ['deadline', 'duration'];
 export const MIN_DURATION_MS = 1000;
 export const MAX_DURATION_MS = 24 * 60 * 60 * 1000; // 24h
@@ -13,6 +14,13 @@ export function normalizeName(raw) {
   const name = String(raw ?? '').trim();
   if (!name) throw new RuleError('タイマー名を入力してください');
   if (name.length > MAX_NAME_LENGTH) throw new RuleError(`タイマー名は${MAX_NAME_LENGTH}文字以内にしてください`);
+  return name;
+}
+
+export function normalizeSetName(raw) {
+  const name = String(raw ?? '').trim();
+  if (!name) throw new RuleError('セット名を入力してください');
+  if (name.length > MAX_SET_NAME_LENGTH) throw new RuleError(`セット名は${MAX_SET_NAME_LENGTH}文字以内にしてください`);
   return name;
 }
 
