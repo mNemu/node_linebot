@@ -5,6 +5,7 @@ import { config } from '../config.js';
 import { dice } from './dice.js';
 import { doDiet } from './diet.js';
 import { viewHelp } from './help.js';
+import { makeFlexMenu } from '../line/flexMenu.js';
 
 function streamToBuffer(stream) {
   return new Promise((resolve, reject) => {
@@ -46,6 +47,8 @@ async function sendMessage(LPost) {
     msg = dice(arg);
   } else if (/^ *diet/.test(arg)) {
     msg = doDiet(arg);
+  } else if (arg.trim() === 'メニュー') {
+    msg = makeFlexMenu();
   } else {
     msg = viewHelp();
   }

@@ -1,4 +1,5 @@
 import { config } from '../config.js';
+import { menuHeaderButton } from './flexMenu.js';
 
 const STATUS_PAGE_PATH = '/diet-status.html';
 
@@ -14,17 +15,26 @@ export function makeFlexDiet(totalRate, monthlyRate, realism) {
     type: 'bubble',
     header: {
       type: 'box',
-      layout: 'vertical',
+      layout: 'horizontal',
       backgroundColor: '#0f766e',
       paddingAll: 'md',
+      alignItems: 'center',
       contents: [
-        { type: 'text', text: '📉 ダイエット試算', color: '#ffffff', weight: 'bold', size: 'md' },
         {
-          type: 'text',
-          text: `総率 ${totalRate.toFixed(2)}% 月率 ${monthlyRate.toFixed(2)}%/30日`,
-          color: '#ccfbf1',
-          size: 'xs',
+          type: 'box',
+          layout: 'vertical',
+          flex: 1,
+          contents: [
+            { type: 'text', text: '📉 ダイエット試算', color: '#ffffff', weight: 'bold', size: 'md' },
+            {
+              type: 'text',
+              text: `総率 ${totalRate.toFixed(2)}% 月率 ${monthlyRate.toFixed(2)}%/30日`,
+              color: '#ccfbf1',
+              size: 'xs',
+            },
+          ],
         },
+        menuHeaderButton(),
       ],
     },
     body: {

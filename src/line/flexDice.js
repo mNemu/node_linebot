@@ -1,3 +1,5 @@
+import { menuHeaderButton } from './flexMenu.js';
+
 const DICE_PER_ROW = 8;
 
 /** Builds a Flex Message bubble showing each die's result as a small tile,
@@ -28,10 +30,14 @@ export function makeFlexDice(count, sides, results, sum) {
     size: 'kilo',
     header: {
       type: 'box',
-      layout: 'vertical',
+      layout: 'horizontal',
       backgroundColor: '#5b21b6',
       paddingAll: 'md',
-      contents: [{ type: 'text', text: `🎲 ${count}D${sides}`, color: '#ffffff', weight: 'bold', size: 'lg' }],
+      alignItems: 'center',
+      contents: [
+        { type: 'text', text: `🎲 ${count}D${sides}`, color: '#ffffff', weight: 'bold', size: 'lg', flex: 1 },
+        menuHeaderButton(),
+      ],
     },
     body: {
       type: 'box',
